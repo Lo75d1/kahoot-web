@@ -1,0 +1,94 @@
+{
+  "title": "Kiến thức chung vui vẻ",
+  "description": "Bộ đề mẫu 8 câu để thử màn chơi solo.",
+  "questions": [
+    {
+      "text": "Thủ đô của Việt Nam là thành phố nào?",
+      "timeLimit": 15,
+      "points": 1000,
+      "answers": [
+        { "text": "Hà Nội", "correct": true },
+        { "text": "TP. Hồ Chí Minh", "correct": false },
+        { "text": "Đà Nẵng", "correct": false },
+        { "text": "Huế", "correct": false }
+      ]
+    },
+    {
+      "text": "Đại dương nào lớn nhất thế giới?",
+      "timeLimit": 15,
+      "points": 1000,
+      "answers": [
+        { "text": "Đại Tây Dương", "correct": false },
+        { "text": "Thái Bình Dương", "correct": true },
+        { "text": "Ấn Độ Dương", "correct": false },
+        { "text": "Bắc Băng Dương", "correct": false }
+      ]
+    },
+    {
+      "text": "Kết quả của phép tính 2 + 2 × 2 là bao nhiêu?",
+      "timeLimit": 20,
+      "points": 1200,
+      "answers": [
+        { "text": "6", "correct": true },
+        { "text": "8", "correct": false },
+        { "text": "4", "correct": false },
+        { "text": "10", "correct": false }
+      ]
+    },
+    {
+      "text": "Ngày Quốc khánh nước Cộng hòa Xã hội Chủ nghĩa Việt Nam là ngày nào?",
+      "timeLimit": 15,
+      "points": 1000,
+      "answers": [
+        { "text": "30/4", "correct": false },
+        { "text": "2/9", "correct": true },
+        { "text": "1/5", "correct": false },
+        { "text": "19/8", "correct": false }
+      ]
+    },
+    {
+      "text": "Hành tinh nào gần Mặt Trời nhất?",
+      "timeLimit": 15,
+      "points": 1000,
+      "answers": [
+        { "text": "Sao Kim", "correct": false },
+        { "text": "Trái Đất", "correct": false },
+        { "text": "Sao Thủy", "correct": true },
+        { "text": "Sao Hỏa", "correct": false }
+      ]
+    },
+    {
+      "text": "Ai là tác giả của kiệt tác 'Truyện Kiều'?",
+      "timeLimit": 15,
+      "points": 1000,
+      "answers": [
+        { "text": "Nguyễn Du", "correct": true },
+        { "text": "Hồ Xuân Hương", "correct": false },
+        { "text": "Nguyễn Trãi", "correct": false },
+        { "text": "Nguyễn Đình Chiểu", "correct": false }
+      ]
+    },
+    {
+      "text": "Quốc gia nào có diện tích lớn nhất thế giới?",
+      "timeLimit": 15,
+      "points": 1000,
+      "answers": [
+        { "text": "Canada", "correct": false },
+        { "text": "Trung Quốc", "correct": false },
+        { "text": "Hoa Kỳ", "correct": false },
+        { "text": "Nga", "correct": true }
+      ]
+    },
+    {
+      "text": "Nguyên tố hóa học có ký hiệu 'O' là gì?",
+      "timeLimit": 12,
+      "points": 800,
+      "answers": [
+        { "text": "Vàng", "correct": false },
+        { "text": "Oxy", "correct": true },
+        { "text": "Osmi", "correct": false },
+        { "text": "Bạc", "correct": false }
+      ]
+    }
+  ]
+}
