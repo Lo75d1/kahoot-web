@@ -2,11 +2,33 @@ import QuizGame from "@/components/QuizGame";
 
 export default function Home() {
   return (
-    <main className="flex min-h-dvh flex-col bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600">
-      <QuizGame />
-      <footer className="pb-4 text-center text-xs text-white/50">
-        Quiz M1 · bản solo · Next.js
-      </footer>
+    <main className="relative flex min-h-dvh flex-col overflow-hidden bg-gradient-to-br from-indigo-500 via-purple-500 to-fuchsia-500">
+      {/* Bong bóng mờ trôi nền */}
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        <div
+          className="animate-float absolute -left-24 top-8 h-72 w-72 rounded-full bg-sky-300/40 blur-3xl"
+          style={{ animationDuration: "14s" }}
+        />
+        <div
+          className="animate-float absolute right-[-4rem] top-1/3 h-80 w-80 rounded-full bg-fuchsia-300/40 blur-3xl"
+          style={{ animationDuration: "19s", animationDelay: "-4s" }}
+        />
+        <div
+          className="animate-float absolute bottom-0 left-1/4 h-72 w-72 rounded-full bg-amber-200/40 blur-3xl"
+          style={{ animationDuration: "16s", animationDelay: "-8s" }}
+        />
+        <div
+          className="animate-float absolute bottom-8 right-1/4 h-64 w-64 rounded-full bg-emerald-200/30 blur-3xl"
+          style={{ animationDuration: "21s", animationDelay: "-2s" }}
+        />
+      </div>
+
+      <div className="relative z-10 flex flex-1 flex-col">
+        <QuizGame />
+        <footer className="pb-4 text-center text-xs text-white/50">
+          Quiz · bản solo · Next.js
+        </footer>
+      </div>
     </main>
   );
 }
