@@ -128,6 +128,15 @@ export default function QuizEditor({
   const removeQuestion = (qi: number) =>
     setQuestions((qs) => (qs.length <= 1 ? qs : qs.filter((_, i) => i !== qi)));
 
+  const moveQuestion = (qi: number, dir: -1 | 1) =>
+    setQuestions((qs) => {
+      const j = qi + dir;
+      if (j < 0 || j >= qs.length) return qs;
+      const copy = [...qs];
+      [copy[qi], copy[j]] = [copy[j], copy[qi]];
+      return copy;
+    });
+
   const importJson = () => {
     setError(null);
     try {
@@ -238,13 +247,31 @@ export default function QuizEditor({
         <div key={qi} className={`flex flex-col gap-3 rounded-3xl p-4 ${GLASS}`}>
           <div className="flex items-center justify-between">
             <span className="font-bold text-amber-200">Câu {qi + 1}</span>
-            <button
-              onClick={() => removeQuestion(qi)}
-              disabled={questions.length <= 1}
-              className="text-sm text-rose-200 transition hover:text-rose-100 disabled:opacity-40"
-            >
-              ✕ Xóa câu
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => moveQuestion(qi, -1)}
+                disabled={qi === 0}
+                className="text-lg text-white/80 transition hover:text-white disabled:opacity-25"
+                aria-label="Chuyển câu lên"
+              >
+                ↑
+              </button>
+              <button
+                onClick={() => moveQuestion(qi, 1)}
+                disabled={qi === questions.length - 1}
+                className="text-lg text-white/80 transition hover:text-white disabled:opacity-25"
+                aria-label="Chuyển câu xuống"
+              >
+                ↓
+              </button>
+              <button
+                onClick={() => removeQuestion(qi)}
+                disabled={questions.length <= 1}
+                className="text-sm text-rose-200 transition hover:text-rose-100 disabled:opacity-40"
+              >
+                ✕ Xóa câu
+              </button>
+            </div>
           </div>
 
           <input
