@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Quiz } from "@/lib/types";
 import { ensureSeeded, localStore, type SavedQuiz } from "@/lib/store";
-import { activeStore, storageMode } from "@/lib/activeStore";
+import { supabaseStore } from "@/lib/supabaseStore";
+import { isSupabaseConfigured } from "@/lib/supabase";
+import { onAuthChange, signOut, type User } from "@/lib/auth";
 import {
   toExportJson,
   downloadText,
@@ -17,13 +19,12 @@ import QuizEditor from "./QuizEditor";
 import HostGame from "./multiplayer/HostGame";
 import PlayerGame from "./multiplayer/PlayerGame";
 import AiCreator from "./AiCreator";
+import AuthScreen from "./AuthScreen";
 
-// Tự chọn: có Supabase -> đám mây, chưa có -> localStorage.
-const store = activeStore;
+type Mode = "bank" | "editor" | "play" | "host" | "join" | "ai" | "auth";
 
-type Mode = "bank" | "editor" | "play" | "host" | "join" | "ai";
-
-const cloud = storageMode === "cloud";
+// Multiplayer cần Supabase (độc lập với đăng nhập).
+const cloud = isSupabaseConfigured;
 
 const GLASS =
   "border border-white/25 bg-white/10 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.18)]";
@@ -37,23 +38,48 @@ export default function QuizApp() {
   const [hostQuiz, setHostQuiz] = useState<Quiz | null>(null);
   const [shuffleOn, setShuffleOn] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+
+  // Chưa đăng nhập -> localStorage (khách). Đã đăng nhập -> Supabase (đề riêng).
+  const store = user ? supabaseStore : localStore;
 
   const flash = (msg: string) => {
     setToast(msg);
     window.setTimeout(() => setToast(null), 2500);
   };
 
-  const refresh = useCallback(async () => {
-    setQuizzes(await store.list());
-    setLoading(false);
+  // Theo dõi trạng thái đăng nhập.
+  useEffect(() => {
+    const sub = onAuthChange((u) => {
+      setUser(u);
+      setAuthReady(true);
+    });
+    return () => sub.unsubscribe();
   }, []);
 
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    try {
+      setQuizzes(await store.list());
+    } catch {
+      setQuizzes([]);
+    }
+    setLoading(false);
+  }, [store]);
+
+  // Nạp ngân hàng khi đã biết trạng thái đăng nhập.
   useEffect(() => {
+    if (!authReady) return;
     (async () => {
-      if (storageMode === "local") await ensureSeeded(localStore);
+      if (!user) await ensureSeeded(localStore);
       await refresh();
     })();
-  }, [refresh]);
+  }, [authReady, user, refresh]);
+
+  const doLogout = async () => {
+    await signOut();
+  };
 
   const handleSave = async (quiz: Quiz & { id?: string }) => {
     await store.save(quiz);
@@ -109,6 +135,15 @@ export default function QuizApp() {
     return <AiCreator onSave={handleSave} onCancel={() => setMode("bank")} />;
   }
 
+  if (mode === "auth") {
+    return (
+      <AuthScreen
+        onDone={() => setMode("bank")}
+        onCancel={() => setMode("bank")}
+      />
+    );
+  }
+
   if (mode === "editor") {
     return (
       <QuizEditor
@@ -128,11 +163,27 @@ export default function QuizApp() {
             Ngân hàng đề
           </h1>
           <p className="text-white/70">Chọn một bộ đề để chơi hoặc chỉnh sửa.</p>
-          <span className="mt-1 inline-block rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 text-xs text-white/70 backdrop-blur-md">
-            {storageMode === "cloud"
-              ? "☁ Lưu trên đám mây (Supabase)"
-              : "📱 Lưu trên máy này"}
-          </span>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <span className="inline-block rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 text-xs text-white/70 backdrop-blur-md">
+              {user ? `☁ ${user.email}` : "📱 Lưu trên máy này (khách)"}
+            </span>
+            {cloud &&
+              (user ? (
+                <button
+                  onClick={doLogout}
+                  className="text-xs text-white/70 underline underline-offset-2 hover:text-white"
+                >
+                  Đăng xuất
+                </button>
+              ) : (
+                <button
+                  onClick={() => setMode("auth")}
+                  className="text-xs font-semibold text-amber-200 underline underline-offset-2 hover:text-amber-100"
+                >
+                  👤 Đăng nhập giáo viên
+                </button>
+              ))}
+          </div>
         </div>
         <div className="flex shrink-0 flex-col gap-2">
           {cloud && (

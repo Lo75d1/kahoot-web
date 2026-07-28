@@ -46,11 +46,13 @@ export const supabaseStore: QuizStore = {
   },
 
   async save(quiz) {
+    const { data: u } = await supabase!.auth.getUser();
     const payload = {
       title: quiz.title,
       description: quiz.description,
       questions: quiz.questions,
       updated_at: new Date().toISOString(),
+      owner_id: u.user?.id,
     };
     if (quiz.id) {
       const { data, error } = await supabase!
