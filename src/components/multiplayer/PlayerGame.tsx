@@ -11,6 +11,7 @@ import {
   type Player,
   type Room,
 } from "@/lib/multiplayer";
+import { sfx } from "@/lib/sound";
 import { GLASS, TILE, PlayerChips, Leaderboard } from "./mpUi";
 
 export default function PlayerGame({ onExit }: { onExit: () => void }) {
@@ -76,12 +77,21 @@ export default function PlayerGame({ onExit }: { onExit: () => void }) {
     async (choice: number) => {
       const r = roomRef.current;
       if (!r || !me || answeredIdx === r.current_index) return;
+      // Khoá: hết giờ thì không nhận trả lời (chống gian lận trả lời muộn).
+      const q = r.quiz.questions[r.current_index];
+      const started = r.question_started_at
+        ? Date.parse(r.question_started_at)
+        : Date.now();
+      if (Date.now() - started > q.timeLimit * 1000) return;
+
       setAnsweredIdx(r.current_index);
       try {
         const res = await submitAnswer(r, me, choice);
         if (res) {
           setResult(res);
           setMe({ ...me, score: me.score + res.points });
+          if (res.correct) sfx.correct();
+          else sfx.wrong();
         }
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
@@ -182,7 +192,10 @@ export default function PlayerGame({ onExit }: { onExit: () => void }) {
         </span>
       </div>
 
-      <div className="rounded-3xl border border-white/50 bg-white/75 px-5 py-6 text-center shadow-[0_8px_32px_rgba(0,0,0,0.18)] backdrop-blur-2xl">
+      <div
+        key={room.current_index}
+        className="anim-fade-up rounded-3xl border border-white/50 bg-white/75 px-5 py-6 text-center shadow-[0_8px_32px_rgba(0,0,0,0.18)] backdrop-blur-2xl"
+      >
         <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">{q.text}</h2>
       </div>
 
@@ -210,14 +223,15 @@ export default function PlayerGame({ onExit }: { onExit: () => void }) {
           </p>
         </div>
       ) : (
-        <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
+        <div key={`ans-${room.current_index}`} className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
           {q.answers.map((a, i) => {
             const t = TILE[i % TILE.length];
             return (
               <button
                 key={i}
                 onClick={() => answer(i)}
-                className={`flex items-center gap-4 rounded-[1.5rem] border border-white/25 px-5 py-6 text-left text-xl font-semibold text-white shadow-lg backdrop-blur-md transition hover:-translate-y-0.5 hover:bg-white/25 active:scale-[0.98] ${t.tint}`}
+                style={{ animationDelay: `${i * 70}ms` }}
+                className={`anim-fade-up flex items-center gap-4 rounded-[1.5rem] border border-white/25 px-5 py-6 text-left text-xl font-semibold text-white shadow-lg backdrop-blur-md transition hover:-translate-y-0.5 hover:bg-white/25 active:scale-[0.98] ${t.tint}`}
               >
                 <span className="grid h-11 w-11 place-items-center rounded-full border border-white/40 bg-white/25 text-lg font-black">
                   {t.label}

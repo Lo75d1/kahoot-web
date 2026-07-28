@@ -189,6 +189,11 @@ export async function submitAnswer(
   return { correct, points };
 }
 
+export async function deleteRoom(roomId: string) {
+  const { error } = await sb().from("rooms").delete().eq("id", roomId);
+  if (error) throw error;
+}
+
 export async function answeredCount(
   roomId: string,
   index: number,

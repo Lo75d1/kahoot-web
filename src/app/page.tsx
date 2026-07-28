@@ -1,4 +1,5 @@
 import QuizApp from "@/components/QuizApp";
+import SoundToggle from "@/components/SoundToggle";
 
 export default function Home() {
   return (
@@ -23,10 +24,11 @@ export default function Home() {
         />
       </div>
 
+      <SoundToggle />
       <div className="relative z-10 flex flex-1 flex-col">
         <QuizApp />
         <footer className="pb-4 text-center text-xs text-white/50">
-          Quiz · bản solo · Next.js
+          Quiz · Next.js + Supabase
         </footer>
       </div>
     </main>

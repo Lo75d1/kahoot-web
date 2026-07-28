@@ -1,6 +1,7 @@
 "use client";
 
 import type { Player } from "@/lib/multiplayer";
+import { avatarFor } from "@/lib/avatar";
 
 export const GLASS =
   "border border-white/25 bg-white/10 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.18)]";
@@ -25,19 +26,25 @@ export function PlayerChips({
     );
   return (
     <div className="flex flex-wrap justify-center gap-2">
-      {players.map((p) => (
-        <span
-          key={p.id}
-          className={`rounded-full border px-3 py-1.5 text-sm font-semibold backdrop-blur-md ${
-            p.id === youId
-              ? "border-amber-200/50 bg-amber-300/25 text-amber-50"
-              : "border-white/25 bg-white/15 text-white"
-          }`}
-        >
-          {p.name}
-          {p.id === youId ? " (bạn)" : ""}
-        </span>
-      ))}
+      {players.map((p) => {
+        const a = avatarFor(p.id);
+        return (
+          <span
+            key={p.id}
+            className={`anim-pop flex items-center gap-1.5 rounded-full border py-1 pl-1 pr-3 text-sm font-semibold backdrop-blur-md ${
+              p.id === youId
+                ? "border-amber-200/50 bg-amber-300/25 text-amber-50"
+                : "border-white/25 bg-white/15 text-white"
+            }`}
+          >
+            <span className={`grid h-6 w-6 place-items-center rounded-full text-sm ${a.color}`}>
+              {a.emoji}
+            </span>
+            {p.name}
+            {p.id === youId ? " (bạn)" : ""}
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -65,6 +72,11 @@ export function Leaderboard({
         >
           <span className="flex items-center gap-2 font-semibold text-white">
             <span className="w-6 text-center">{medals[i] ?? i + 1}</span>
+            <span
+              className={`grid h-7 w-7 place-items-center rounded-full text-sm ${avatarFor(p.id).color}`}
+            >
+              {avatarFor(p.id).emoji}
+            </span>
             {p.name}
             {p.id === youId ? " (bạn)" : ""}
           </span>

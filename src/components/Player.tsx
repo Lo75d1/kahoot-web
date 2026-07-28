@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Quiz, RoundResult } from "@/lib/types";
 import { computeScore, streakBonus } from "@/lib/scoring";
+import { sfx } from "@/lib/sound";
 
 type Phase = "answering" | "revealed";
 
@@ -71,6 +72,8 @@ export default function Player({
       setStreak(newStreak);
       setResults((r) => [...r, { correct, earned, responseMs }]);
       setPhase("revealed");
+      if (correct) sfx.correct();
+      else sfx.wrong();
     },
     [question, streak],
   );
@@ -204,7 +207,10 @@ export default function Player({
         <span className={CHIP}>{score.toLocaleString("vi-VN")} điểm</span>
       </div>
 
-      <div className="rounded-3xl border border-white/50 bg-white/75 px-5 py-7 text-center shadow-[0_8px_32px_rgba(0,0,0,0.18)] backdrop-blur-2xl">
+      <div
+        key={index}
+        className="anim-fade-up rounded-3xl border border-white/50 bg-white/75 px-5 py-7 text-center shadow-[0_8px_32px_rgba(0,0,0,0.18)] backdrop-blur-2xl"
+      >
         <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">
           {question.text}
         </h2>

@@ -40,8 +40,44 @@ body {
   animation: floatBubble 16s ease-in-out infinite;
 }
 
+/* Hoạt ảnh chuyển câu / xuất hiện phần tử */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  60% {
+    transform: scale(1.03);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.anim-fade-up {
+  animation: fadeInUp 0.35s ease both;
+}
+
+.anim-pop {
+  animation: pop 0.32s ease both;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .animate-float {
+  .animate-float,
+  .anim-fade-up,
+  .anim-pop {
     animation: none;
   }
 }

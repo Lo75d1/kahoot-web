@@ -5,6 +5,7 @@ import type { Quiz } from "@/lib/types";
 import {
   answeredCount,
   createRoom,
+  deleteRoom,
   getClientId,
   listPlayers,
   nextQuestion,
@@ -15,6 +16,7 @@ import {
   type Player,
   type Room,
 } from "@/lib/multiplayer";
+import { sfx } from "@/lib/sound";
 import { GLASS, TILE, PlayerChips, Leaderboard } from "./mpUi";
 
 export default function HostGame({
@@ -31,6 +33,8 @@ export default function HostGame({
   const [error, setError] = useState<string | null>(null);
 
   const revealedRef = useRef(false);
+  const prevCountRef = useRef(0);
+  const endedRef = useRef(false);
   const roomRef = useRef<Room | null>(null);
   roomRef.current = room;
 
@@ -43,10 +47,14 @@ export default function HostGame({
         const r = await createRoom(quiz, getClientId());
         setRoom(r);
         setPlayers(await listPlayers(r.id));
+        prevCountRef.current = 0;
         chRoom = subscribeRoom(r.id, (nr) => setRoom(nr));
-        chPlayers = subscribePlayers(r.id, async () =>
-          setPlayers(await listPlayers(r.id)),
-        );
+        chPlayers = subscribePlayers(r.id, async () => {
+          const list = await listPlayers(r.id);
+          if (list.length > prevCountRef.current) sfx.join();
+          prevCountRef.current = list.length;
+          setPlayers(list);
+        });
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
       }
@@ -81,14 +89,35 @@ export default function HostGame({
     return () => clearInterval(tick);
   }, [room]);
 
+  // Âm thanh kết thúc.
+  useEffect(() => {
+    if (room?.status === "ended" && !endedRef.current) {
+      endedRef.current = true;
+      sfx.end();
+    }
+  }, [room?.status]);
+
   const doStart = useCallback(async () => {
     if (!room) return;
     try {
+      sfx.start();
       await startGame(room.id);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
   }, [room]);
+
+  const doClose = useCallback(async () => {
+    const r = roomRef.current;
+    if (r) {
+      try {
+        await deleteRoom(r.id);
+      } catch {
+        /* ignore */
+      }
+    }
+    onExit();
+  }, [onExit]);
 
   const doNext = useCallback(async () => {
     const r = roomRef.current;
@@ -145,7 +174,7 @@ export default function HostGame({
             <LightBtn onClick={doStart} disabled={players.length === 0} className="flex-1">
               ▶ Bắt đầu
             </LightBtn>
-            <GhostBtn onClick={onExit}>Hủy</GhostBtn>
+            <GhostBtn onClick={doClose}>Hủy</GhostBtn>
           </div>
           {players.length === 0 && (
             <p className="text-xs text-white/50">Chờ ít nhất 1 người vào phòng.</p>
@@ -163,7 +192,7 @@ export default function HostGame({
           🏁 Kết thúc!
         </h1>
         <Leaderboard players={players} />
-        <GhostBtn onClick={onExit}>⌂ Về ngân hàng đề</GhostBtn>
+        <GhostBtn onClick={doClose}>⌂ Về ngân hàng đề</GhostBtn>
       </Center>
     );
   }
@@ -178,23 +207,36 @@ export default function HostGame({
         <span className={`rounded-full border border-white/25 bg-white/15 px-3 py-1 backdrop-blur-md`}>
           Câu {room.current_index + 1}/{total}
         </span>
-        <span className={`rounded-full border border-white/25 bg-white/15 px-3 py-1 backdrop-blur-md`}>
-          {revealed ? "Đáp án" : `⏱ ${secondsLeft}s`} · {answered} đã trả lời
-        </span>
+        <div className="flex items-center gap-2">
+          <span className={`rounded-full border border-white/25 bg-white/15 px-3 py-1 backdrop-blur-md`}>
+            {revealed ? "Đáp án" : `⏱ ${secondsLeft}s`} · {answered} đã trả lời
+          </span>
+          <button
+            onClick={doClose}
+            aria-label="Đóng phòng"
+            className="grid h-8 w-8 place-items-center rounded-full border border-rose-200/30 bg-rose-500/20 text-rose-100 backdrop-blur-md transition hover:bg-rose-500/35"
+          >
+            ✕
+          </button>
+        </div>
       </div>
 
-      <div className="rounded-3xl border border-white/50 bg-white/75 px-5 py-7 text-center shadow-[0_8px_32px_rgba(0,0,0,0.18)] backdrop-blur-2xl">
+      <div
+        key={room.current_index}
+        className="anim-fade-up rounded-3xl border border-white/50 bg-white/75 px-5 py-7 text-center shadow-[0_8px_32px_rgba(0,0,0,0.18)] backdrop-blur-2xl"
+      >
         <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">{q.text}</h2>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div key={`ans-${room.current_index}`} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {q.answers.map((a, i) => {
           const t = TILE[i % TILE.length];
           const good = revealed && a.correct;
           return (
             <div
               key={i}
-              className={`flex items-center gap-4 rounded-[1.5rem] border px-5 py-5 text-xl font-semibold backdrop-blur-md ${
+              style={{ animationDelay: `${i * 70}ms` }}
+              className={`anim-fade-up flex items-center gap-4 rounded-[1.5rem] border px-5 py-5 text-xl font-semibold backdrop-blur-md ${
                 good
                   ? "border-emerald-200/70 bg-emerald-400/30 ring-2 ring-emerald-200/60"
                   : `border-white/25 ${t.tint} ${revealed ? "opacity-45" : ""}`
