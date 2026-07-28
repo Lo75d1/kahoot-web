@@ -21,6 +21,7 @@ export default function AiCreator({
   onSave: (quiz: Quiz) => void;
   onCancel: () => void;
 }) {
+  const [attach, setAttach] = useState(false);
   const [source, setSource] = useState("");
   const [count, setCount] = useState(8);
   const [answers, setAnswers] = useState(4);
@@ -33,13 +34,14 @@ export default function AiCreator({
   const [error, setError] = useState<string | null>(null);
 
   const gen = () => {
-    if (!source.trim()) {
-      setError("Nhập chủ đề hoặc dán tài liệu nguồn trước.");
+    if (!attach && !source.trim()) {
+      setError("Nhập chủ đề hoặc dán văn bản nguồn trước.");
       return;
     }
     setError(null);
     const cfg: AiConfig = {
       source: source.trim(),
+      attach,
       count: Math.min(Math.max(count, 1), 50),
       answers: Math.min(Math.max(answers, 2), 4),
       difficulty,
@@ -89,12 +91,51 @@ export default function AiCreator({
       {/* Bước 1: cấu hình */}
       <div className={`flex flex-col gap-3 rounded-3xl p-4 ${GLASS}`}>
         <p className="font-bold text-amber-200">① Mô tả yêu cầu</p>
+
+        {/* Chọn nguồn: gõ văn bản hay đính kèm tài liệu vào AI */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setAttach(false)}
+            className={`flex-1 rounded-xl border px-3 py-2 text-sm font-semibold backdrop-blur-md transition ${
+              !attach
+                ? "border-amber-200/50 bg-amber-300/25 text-amber-50"
+                : "border-white/25 bg-white/10 text-white/80 hover:bg-white/20"
+            }`}
+          >
+            ⌨ Gõ / dán văn bản
+          </button>
+          <button
+            onClick={() => setAttach(true)}
+            className={`flex-1 rounded-xl border px-3 py-2 text-sm font-semibold backdrop-blur-md transition ${
+              attach
+                ? "border-amber-200/50 bg-amber-300/25 text-amber-50"
+                : "border-white/25 bg-white/10 text-white/80 hover:bg-white/20"
+            }`}
+          >
+            📎 Đính kèm tài liệu / ảnh
+          </button>
+        </div>
+
+        {attach ? (
+          <div className="rounded-xl border border-white/20 bg-white/5 p-3 text-sm text-white/80">
+            Bạn sẽ <b className="text-white">đính kèm file/ảnh thẳng vào AI</b>{" "}
+            (ChatGPT/Gemini/Claude) ở bước sau — khỏi cần gõ lại. Ô dưới chỉ để
+            ghi <i>phạm vi/yêu cầu thêm</i> (không bắt buộc).
+          </div>
+        ) : null}
+
         <label className="flex flex-col gap-1 text-sm font-semibold">
-          Chủ đề hoặc tài liệu nguồn
+          {attach
+            ? "Phạm vi / yêu cầu thêm (không bắt buộc)"
+            : "Chủ đề hoặc văn bản nguồn"}
           <textarea
             value={source}
             onChange={(e) => setSource(e.target.value)}
-            placeholder="VD: Sinh học 12 - di truyền học Mendel. Hoặc dán cả đoạn tài liệu vào đây."
+            placeholder={
+              attach
+                ? "VD: chỉ ra câu hỏi từ chương 2, tập trung phần định nghĩa."
+                : "VD: Sinh học 12 - di truyền học Mendel. Hoặc dán cả đoạn văn bản vào đây."
+            }
             className={`${INPUT} h-28`}
           />
         </label>
@@ -164,8 +205,18 @@ export default function AiCreator({
             {copied ? "✓ Đã copy" : "📋 Copy prompt"}
           </button>
           <p className="text-xs text-white/60">
-            Mở AI bất kỳ, dán prompt, gửi. AI sẽ trả về một đoạn JSON — copy toàn
-            bộ rồi dán xuống ô bên dưới.
+            {attach ? (
+              <>
+                Mở AI (ChatGPT/Gemini/Claude) → bấm <b>📎 đính kèm</b> chọn
+                file/ảnh tài liệu → <b>dán prompt này</b> → gửi. AI sẽ trả về một
+                đoạn JSON — copy toàn bộ rồi dán xuống ô bên dưới.
+              </>
+            ) : (
+              <>
+                Mở AI bất kỳ, dán prompt, gửi. AI sẽ trả về một đoạn JSON — copy
+                toàn bộ rồi dán xuống ô bên dưới.
+              </>
+            )}
           </p>
         </div>
       )}

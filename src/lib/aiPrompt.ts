@@ -1,7 +1,8 @@
 // Tạo prompt chuẩn cho AI ngoài + bóc JSON từ kết quả AI trả về.
 
 export interface AiConfig {
-  source: string; // chủ đề hoặc tài liệu dán vào
+  source: string; // chủ đề/văn bản, hoặc ghi chú thêm khi đính kèm
+  attach: boolean; // true = tài liệu/ảnh sẽ đính kèm trực tiếp vào AI
   count: number; // số câu
   answers: number; // số đáp án mỗi câu
   difficulty: string; // dễ | trung bình | khó
@@ -13,6 +14,14 @@ export interface AiConfig {
 
 export function buildPrompt(c: AiConfig): string {
   const lang = c.language || "Tiếng Việt";
+  const sourceBlock = c.attach
+    ? `# Nguồn nội dung
+Hãy tạo câu hỏi DỰA VÀO TÀI LIỆU / HÌNH ẢNH mà tôi đã đính kèm trong cuộc trò chuyện này.${
+        c.source ? `\nYêu cầu / phạm vi cụ thể: ${c.source}` : ""
+      }`
+    : `# Nguồn nội dung / chủ đề
+${c.source}`;
+
   return `Bạn là công cụ tạo bộ câu hỏi trắc nghiệm. Hãy tạo một bộ đề theo yêu cầu bên dưới và TRẢ VỀ DUY NHẤT một JSON hợp lệ đúng cấu trúc, KHÔNG kèm giải thích, KHÔNG dùng dấu \`\`\`.
 
 # Yêu cầu
@@ -22,8 +31,7 @@ export function buildPrompt(c: AiConfig): string {
 - Độ khó: ${c.difficulty}
 - timeLimit = ${c.timeLimit} (giây) và points = ${c.points} cho mỗi câu
 ${c.notes ? `- Ghi chú thêm: ${c.notes}\n` : ""}
-# Nguồn nội dung / chủ đề
-${c.source}
+${sourceBlock}
 
 # Cấu trúc JSON bắt buộc
 {
