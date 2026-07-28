@@ -14,11 +14,15 @@ import {
 } from "@/lib/quizIo";
 import Player from "./Player";
 import QuizEditor from "./QuizEditor";
+import HostGame from "./multiplayer/HostGame";
+import PlayerGame from "./multiplayer/PlayerGame";
 
 // Tự chọn: có Supabase -> đám mây, chưa có -> localStorage.
 const store = activeStore;
 
-type Mode = "bank" | "editor" | "play";
+type Mode = "bank" | "editor" | "play" | "host" | "join";
+
+const cloud = storageMode === "cloud";
 
 const GLASS =
   "border border-white/25 bg-white/10 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.18)]";
@@ -29,6 +33,7 @@ export default function QuizApp() {
   const [loading, setLoading] = useState(true);
   const [editorInitial, setEditorInitial] = useState<SavedQuiz | null>(null);
   const [playQuiz, setPlayQuiz] = useState<Quiz | null>(null);
+  const [hostQuiz, setHostQuiz] = useState<Quiz | null>(null);
   const [shuffleOn, setShuffleOn] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -91,6 +96,14 @@ export default function QuizApp() {
     return <Player quiz={playQuiz} onExit={() => setMode("bank")} />;
   }
 
+  if (mode === "host" && hostQuiz) {
+    return <HostGame quiz={hostQuiz} onExit={() => setMode("bank")} />;
+  }
+
+  if (mode === "join") {
+    return <PlayerGame onExit={() => setMode("bank")} />;
+  }
+
   if (mode === "editor") {
     return (
       <QuizEditor
@@ -116,15 +129,25 @@ export default function QuizApp() {
               : "📱 Lưu trên máy này"}
           </span>
         </div>
-        <button
-          onClick={() => {
-            setEditorInitial(null);
-            setMode("editor");
-          }}
-          className="shrink-0 rounded-2xl border border-white/50 bg-white/85 px-4 py-3 font-extrabold text-violet-700 shadow-lg backdrop-blur-md transition hover:bg-white active:scale-95"
-        >
-          + Tạo đề
-        </button>
+        <div className="flex shrink-0 flex-col gap-2">
+          {cloud && (
+            <button
+              onClick={() => setMode("join")}
+              className="rounded-2xl border border-amber-200/50 bg-amber-300/90 px-4 py-3 font-extrabold text-amber-950 shadow-lg backdrop-blur-md transition hover:bg-amber-300 active:scale-95"
+            >
+              🔑 Tham gia PIN
+            </button>
+          )}
+          <button
+            onClick={() => {
+              setEditorInitial(null);
+              setMode("editor");
+            }}
+            className="rounded-2xl border border-white/50 bg-white/85 px-4 py-3 font-extrabold text-violet-700 shadow-lg backdrop-blur-md transition hover:bg-white active:scale-95"
+          >
+            + Tạo đề
+          </button>
+        </div>
       </div>
 
       {/* Toggle trộn câu hỏi */}
@@ -200,7 +223,18 @@ export default function QuizApp() {
               </div>
 
               {/* Hàng nút phụ */}
-              <div className="flex gap-2 text-sm">
+              <div className="flex flex-wrap gap-2 text-sm">
+                {cloud && (
+                  <button
+                    onClick={() => {
+                      setHostQuiz(q);
+                      setMode("host");
+                    }}
+                    className="rounded-lg border border-amber-200/40 bg-amber-300/20 px-3 py-1.5 font-semibold text-amber-100 backdrop-blur-md transition hover:bg-amber-300/35"
+                  >
+                    🎉 Chủ trì (nhiều người)
+                  </button>
+                )}
                 <button
                   onClick={() => handleDuplicate(q)}
                   className="rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 font-semibold text-white/85 backdrop-blur-md transition hover:bg-white/15"
