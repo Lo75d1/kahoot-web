@@ -1,4 +1,4 @@
-import QuizGame from "@/components/QuizGame";
+import QuizApp from "@/components/QuizApp";
 
 export default function Home() {
   return (
@@ -24,7 +24,7 @@ export default function Home() {
       </div>
 
       <div className="relative z-10 flex flex-1 flex-col">
-        <QuizGame />
+        <QuizApp />
         <footer className="pb-4 text-center text-xs text-white/50">
           Quiz · bản solo · Next.js
         </footer>
