@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Quiz } from "@/lib/types";
 import { ensureSeeded, localStore, type SavedQuiz } from "@/lib/store";
+import { activeStore, storageMode } from "@/lib/activeStore";
 import {
   toExportJson,
   downloadText,
@@ -14,8 +15,8 @@ import {
 import Player from "./Player";
 import QuizEditor from "./QuizEditor";
 
-// Đổi 1 dòng này sang adapter Supabase ở M2b.
-const store = localStore;
+// Tự chọn: có Supabase -> đám mây, chưa có -> localStorage.
+const store = activeStore;
 
 type Mode = "bank" | "editor" | "play";
 
@@ -43,7 +44,7 @@ export default function QuizApp() {
 
   useEffect(() => {
     (async () => {
-      await ensureSeeded(store);
+      if (storageMode === "local") await ensureSeeded(localStore);
       await refresh();
     })();
   }, [refresh]);
@@ -109,6 +110,11 @@ export default function QuizApp() {
             Ngân hàng đề
           </h1>
           <p className="text-white/70">Chọn một bộ đề để chơi hoặc chỉnh sửa.</p>
+          <span className="mt-1 inline-block rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 text-xs text-white/70 backdrop-blur-md">
+            {storageMode === "cloud"
+              ? "☁ Lưu trên đám mây (Supabase)"
+              : "📱 Lưu trên máy này"}
+          </span>
         </div>
         <button
           onClick={() => {
