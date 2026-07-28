@@ -16,11 +16,12 @@ import Player from "./Player";
 import QuizEditor from "./QuizEditor";
 import HostGame from "./multiplayer/HostGame";
 import PlayerGame from "./multiplayer/PlayerGame";
+import AiCreator from "./AiCreator";
 
 // Tự chọn: có Supabase -> đám mây, chưa có -> localStorage.
 const store = activeStore;
 
-type Mode = "bank" | "editor" | "play" | "host" | "join";
+type Mode = "bank" | "editor" | "play" | "host" | "join" | "ai";
 
 const cloud = storageMode === "cloud";
 
@@ -104,6 +105,10 @@ export default function QuizApp() {
     return <PlayerGame onExit={() => setMode("bank")} />;
   }
 
+  if (mode === "ai") {
+    return <AiCreator onSave={handleSave} onCancel={() => setMode("bank")} />;
+  }
+
   if (mode === "editor") {
     return (
       <QuizEditor
@@ -138,6 +143,12 @@ export default function QuizApp() {
               🔑 Tham gia PIN
             </button>
           )}
+          <button
+            onClick={() => setMode("ai")}
+            className="rounded-2xl border border-white/40 bg-gradient-to-r from-violet-500/90 to-fuchsia-500/90 px-4 py-3 font-extrabold text-white shadow-lg backdrop-blur-md transition hover:brightness-110 active:scale-95"
+          >
+            ✨ Tạo bằng AI
+          </button>
           <button
             onClick={() => {
               setEditorInitial(null);
