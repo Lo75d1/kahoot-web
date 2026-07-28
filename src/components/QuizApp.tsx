@@ -20,8 +20,17 @@ import HostGame from "./multiplayer/HostGame";
 import PlayerGame from "./multiplayer/PlayerGame";
 import AiCreator from "./AiCreator";
 import AuthScreen from "./AuthScreen";
+import ImportText from "./ImportText";
 
-type Mode = "bank" | "editor" | "play" | "host" | "join" | "ai" | "auth";
+type Mode =
+  | "bank"
+  | "editor"
+  | "play"
+  | "host"
+  | "join"
+  | "ai"
+  | "auth"
+  | "import";
 
 // Multiplayer cần Supabase (độc lập với đăng nhập).
 const cloud = isSupabaseConfigured;
@@ -135,6 +144,10 @@ export default function QuizApp() {
     return <AiCreator onSave={handleSave} onCancel={() => setMode("bank")} />;
   }
 
+  if (mode === "import") {
+    return <ImportText onSave={handleSave} onCancel={() => setMode("bank")} />;
+  }
+
   if (mode === "auth") {
     return (
       <AuthScreen
@@ -199,6 +212,12 @@ export default function QuizApp() {
             className="rounded-2xl border border-amber-200/50 bg-gradient-to-r from-amber-400 to-yellow-500 px-4 py-3 font-extrabold text-emerald-950 shadow-lg backdrop-blur-md transition hover:brightness-110 active:scale-95"
           >
             ✨ Tạo bằng AI
+          </button>
+          <button
+            onClick={() => setMode("import")}
+            className="rounded-2xl border border-white/25 bg-white/10 px-4 py-3 font-bold text-white backdrop-blur-md transition hover:bg-white/20 active:scale-95"
+          >
+            📄 Nhập tài liệu
           </button>
           <button
             onClick={() => {

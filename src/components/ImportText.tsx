@@ -1,0 +1,213 @@
+"use client";
+
+import { useState } from "react";
+import type { Quiz } from "@/lib/types";
+import { QuizParseError } from "@/lib/parser";
+import { parseMarkerText, parseCsv } from "@/lib/textFormat";
+import { parseByRules, buildRulesPrompt } from "@/lib/ruleParser";
+
+const GLASS =
+  "border border-white/25 bg-white/10 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.18)]";
+const INPUT =
+  "w-full rounded-xl border border-white/40 bg-white/90 px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-200";
+const LIGHT =
+  "rounded-2xl border border-white/50 bg-white/85 px-6 py-3 font-extrabold text-emerald-900 shadow-lg backdrop-blur-md transition hover:bg-white active:scale-95 disabled:opacity-50";
+const GHOST =
+  "rounded-2xl border border-white/25 bg-white/10 px-6 py-3 font-bold text-white backdrop-blur-md transition hover:bg-white/20";
+
+type Fmt = "marker" | "csv" | "rules";
+
+const EXAMPLE: Record<"marker" | "csv", string> = {
+  marker: `# Địa lý Việt Nam
+> Bộ đề mẫu
+
+Thủ đô của Việt Nam?
+* Hà Nội
+- TP.HCM
+- Huế
+- Đà Nẵng
+
+2 + 2 x 2 = ?  [time=15] [points=1200]
+- 8
+* 6
+- 4`,
+  csv: `Câu hỏi,Đáp án A,Đáp án B,Đáp án C,Đáp án D,Đáp án đúng
+Thủ đô Việt Nam?,Hà Nội,TP.HCM,Huế,Đà Nẵng,A
+2 + 2 x 2 = ?,8,6,4,,B`,
+};
+
+export default function ImportText({
+  onSave,
+  onCancel,
+}: {
+  onSave: (quiz: Quiz) => void;
+  onCancel: () => void;
+}) {
+  const [fmt, setFmt] = useState<Fmt>("marker");
+  const [raw, setRaw] = useState("");
+  const [rulesRaw, setRulesRaw] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const onFile = async (file: File | undefined) => {
+    if (!file) return;
+    setError(null);
+    setRaw(await file.text());
+    if (file.name.toLowerCase().endsWith(".csv")) setFmt("csv");
+  };
+
+  const copyPrompt = async () => {
+    try {
+      await navigator.clipboard.writeText(buildRulesPrompt());
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* user tự bôi chọn */
+    }
+  };
+
+  const doImport = () => {
+    setError(null);
+    try {
+      const quiz =
+        fmt === "csv"
+          ? parseCsv(raw)
+          : fmt === "rules"
+            ? parseByRules(raw, rulesRaw)
+            : parseMarkerText(raw);
+      onSave(quiz);
+    } catch (e) {
+      setError(
+        e instanceof QuizParseError || e instanceof Error
+          ? e.message
+          : "Không đọc được tài liệu.",
+      );
+    }
+  };
+
+  return (
+    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 p-4 text-white sm:p-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-black drop-shadow-sm">📄 Nhập từ tài liệu</h1>
+        <button onClick={onCancel} className={`${GHOST} px-4 py-2`}>
+          ← Quay lại
+        </button>
+      </div>
+
+      <div className={`flex flex-col gap-3 rounded-3xl p-4 ${GLASS}`}>
+        {/* Chọn định dạng */}
+        <div className="flex flex-wrap gap-2">
+          {(
+            [
+              ["marker", "✍ Văn bản (* −)"],
+              ["csv", "▦ CSV / Excel"],
+              ["rules", "🧩 Theo quy tắc (AI)"],
+            ] as [Fmt, string][]
+          ).map(([f, label]) => (
+            <button
+              key={f}
+              onClick={() => setFmt(f)}
+              className={`flex-1 rounded-xl border px-3 py-2 text-sm font-semibold backdrop-blur-md transition ${
+                fmt === f
+                  ? "border-amber-200/50 bg-amber-300/25 text-amber-50"
+                  : "border-white/25 bg-white/10 text-white/80 hover:bg-white/20"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Hướng dẫn ngắn */}
+        <div className="rounded-xl border border-white/20 bg-white/5 p-3 text-xs text-white/80">
+          {fmt === "marker" ? (
+            <>
+              <b className="text-white">#</b> tên đề · <b className="text-white">&gt;</b>{" "}
+              mô tả · <b className="text-amber-200">*</b> đáp án đúng ·{" "}
+              <b className="text-white">−</b> đáp án sai · dòng khác = câu hỏi.
+            </>
+          ) : fmt === "csv" ? (
+            <>
+              Cột đầu = câu hỏi, các cột sau = đáp án. Đánh dấu đúng bằng{" "}
+              <b className="text-amber-200">*</b> trước đáp án, <i>hoặc</i> cột cuối
+              ghi <b className="text-white">A/B/C/D</b>.
+            </>
+          ) : (
+            <>
+              Tài liệu <b className="text-white">định dạng bất kỳ</b>: đưa file cho AI
+              kèm prompt bên dưới → AI trả về <b className="text-amber-200">quy tắc</b>{" "}
+              → dán quy tắc vào đây → web tự tách đề.
+            </>
+          )}
+        </div>
+
+        {/* Bước lấy quy tắc (chỉ chế độ rules) */}
+        {fmt === "rules" && (
+          <div className="flex flex-col gap-2 rounded-2xl border border-white/20 bg-white/5 p-3">
+            <p className="text-sm font-bold text-amber-200">
+              ① Lấy quy tắc từ AI
+            </p>
+            <p className="text-xs text-white/70">
+              Mở ChatGPT/Gemini → đính kèm file tài liệu → dán prompt này → gửi. AI
+              trả về một đoạn JSON quy tắc.
+            </p>
+            <button onClick={copyPrompt} className={`${LIGHT} self-start`}>
+              {copied ? "✓ Đã copy prompt" : "📋 Copy prompt lấy quy tắc"}
+            </button>
+            <p className="mt-1 text-sm font-bold text-amber-200">② Dán quy tắc</p>
+            <textarea
+              value={rulesRaw}
+              onChange={(e) => setRulesRaw(e.target.value)}
+              placeholder='{ "questionRegex": "...", "answerRegex": "...", "correctMode": "key", ... }'
+              className={`${INPUT} h-28 font-mono text-xs`}
+            />
+          </div>
+        )}
+
+        {/* Ô dán tài liệu + tải file */}
+        {fmt === "rules" && (
+          <p className="text-sm font-bold text-amber-200">③ Tài liệu gốc</p>
+        )}
+        <textarea
+          value={raw}
+          onChange={(e) => setRaw(e.target.value)}
+          placeholder="Dán nội dung tài liệu vào đây…"
+          className={`${INPUT} h-52 font-mono text-xs`}
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          <label className={`${GHOST} cursor-pointer px-4 py-2 text-sm`}>
+            📎 Tải file (.txt / .csv)
+            <input
+              type="file"
+              accept=".txt,.csv,.md,.tsv"
+              className="hidden"
+              onChange={(e) => onFile(e.target.files?.[0])}
+            />
+          </label>
+          {fmt !== "rules" && (
+            <button
+              onClick={() => setRaw(EXAMPLE[fmt])}
+              className={`${GHOST} px-4 py-2 text-sm`}
+            >
+              Chèn ví dụ
+            </button>
+          )}
+        </div>
+
+        <button
+          onClick={doImport}
+          disabled={!raw.trim() || (fmt === "rules" && !rulesRaw.trim())}
+          className={`${LIGHT} self-start`}
+        >
+          ✓ Chuyển thành bộ đề &amp; nhập
+        </button>
+
+        {error && (
+          <p className="rounded-2xl border border-rose-200/40 bg-rose-500/80 px-4 py-3 text-sm font-semibold text-white backdrop-blur-md">
+            ⚠ {error}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
