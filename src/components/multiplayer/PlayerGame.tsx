@@ -262,7 +262,7 @@ function LightBtn({
   return (
     <button
       {...rest}
-      className={`rounded-2xl border border-white/50 bg-white/85 px-6 py-3 font-extrabold text-violet-700 shadow-lg backdrop-blur-md transition hover:bg-white active:scale-95 disabled:opacity-50 ${className}`}
+      className={`rounded-2xl border border-white/50 bg-white/85 px-6 py-3 font-extrabold text-emerald-900 shadow-lg backdrop-blur-md transition hover:bg-white active:scale-95 disabled:opacity-50 ${className}`}
     >
       {children}
     </button>

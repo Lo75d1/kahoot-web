@@ -21,7 +21,7 @@ const GLASS =
 const INPUT =
   "w-full rounded-xl border border-white/40 bg-white/90 px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-200";
 const BTN_LIGHT =
-  "rounded-xl border border-white/50 bg-white/85 px-4 py-2 font-bold text-violet-700 shadow backdrop-blur-md transition hover:bg-white active:scale-95";
+  "rounded-xl border border-white/50 bg-white/85 px-4 py-2 font-bold text-emerald-900 shadow backdrop-blur-md transition hover:bg-white active:scale-95";
 const BTN_GHOST =
   "rounded-xl border border-white/25 bg-white/10 px-4 py-2 font-semibold text-white backdrop-blur-md transition hover:bg-white/20";
 

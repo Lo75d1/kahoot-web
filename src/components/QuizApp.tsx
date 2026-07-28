@@ -196,7 +196,7 @@ export default function QuizApp() {
           )}
           <button
             onClick={() => setMode("ai")}
-            className="rounded-2xl border border-white/40 bg-gradient-to-r from-violet-500/90 to-fuchsia-500/90 px-4 py-3 font-extrabold text-white shadow-lg backdrop-blur-md transition hover:brightness-110 active:scale-95"
+            className="rounded-2xl border border-amber-200/50 bg-gradient-to-r from-amber-400 to-yellow-500 px-4 py-3 font-extrabold text-emerald-950 shadow-lg backdrop-blur-md transition hover:brightness-110 active:scale-95"
           >
             ✨ Tạo bằng AI
           </button>
@@ -205,7 +205,7 @@ export default function QuizApp() {
               setEditorInitial(null);
               setMode("editor");
             }}
-            className="rounded-2xl border border-white/50 bg-white/85 px-4 py-3 font-extrabold text-violet-700 shadow-lg backdrop-blur-md transition hover:bg-white active:scale-95"
+            className="rounded-2xl border border-white/50 bg-white/85 px-4 py-3 font-extrabold text-emerald-900 shadow-lg backdrop-blur-md transition hover:bg-white active:scale-95"
           >
             + Tạo đề
           </button>
@@ -236,7 +236,7 @@ export default function QuizApp() {
               setEditorInitial(null);
               setMode("editor");
             }}
-            className="rounded-2xl border border-white/50 bg-white/85 px-6 py-3 font-extrabold text-violet-700 shadow-lg backdrop-blur-md transition hover:bg-white"
+            className="rounded-2xl border border-white/50 bg-white/85 px-6 py-3 font-extrabold text-emerald-900 shadow-lg backdrop-blur-md transition hover:bg-white"
           >
             + Tạo bộ đề đầu tiên
           </button>
@@ -263,7 +263,7 @@ export default function QuizApp() {
               <div className="flex gap-2">
                 <button
                   onClick={() => startPlay(q)}
-                  className="flex-1 rounded-xl border border-white/50 bg-white/85 px-4 py-2 font-extrabold text-violet-700 shadow backdrop-blur-md transition hover:bg-white active:scale-95"
+                  className="flex-1 rounded-xl border border-white/50 bg-white/85 px-4 py-2 font-extrabold text-emerald-900 shadow backdrop-blur-md transition hover:bg-white active:scale-95"
                 >
                   ▶ Chơi
                 </button>

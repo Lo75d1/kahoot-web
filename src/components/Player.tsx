@@ -170,7 +170,7 @@ export default function Player({
         <div className="flex w-full flex-col gap-3 sm:flex-row">
           <button
             onClick={restart}
-            className="flex-1 rounded-2xl border border-white/50 bg-white/85 px-6 py-3 font-extrabold text-violet-700 shadow-lg backdrop-blur-md transition hover:bg-white active:scale-95"
+            className="flex-1 rounded-2xl border border-white/50 bg-white/85 px-6 py-3 font-extrabold text-emerald-900 shadow-lg backdrop-blur-md transition hover:bg-white active:scale-95"
           >
             ↻ Chơi lại
           </button>
@@ -287,7 +287,7 @@ export default function Player({
           )}
           <button
             onClick={next}
-            className="rounded-full border border-white/50 bg-white/85 px-8 py-3 text-base font-extrabold text-violet-700 shadow-lg backdrop-blur-md transition hover:bg-white active:scale-95"
+            className="rounded-full border border-white/50 bg-white/85 px-8 py-3 text-base font-extrabold text-emerald-900 shadow-lg backdrop-blur-md transition hover:bg-white active:scale-95"
           >
             {index + 1 >= total ? "Xem kết quả →" : "Câu tiếp theo →"}
           </button>
