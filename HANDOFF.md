@@ -6,6 +6,7 @@ Tài liệu này để một dev/AI khác (Codex) tiếp nhận dự án: chạy
 - **Live:** https://kahoot-web-pi.vercel.app
 - **Chủ dự án:** GitHub `Lo75d1` (bác sĩ, làm web học tập; giao tiếp tiếng Việt).
 - **Mô tả:** Web quiz kiểu Kahoot: tạo/ nhập bộ đề, chơi solo & nhiều người (realtime), có tài khoản giáo viên.
+- **Tầm nhìn đầy đủ & lộ trình chi tiết:** xem [`MASTER_PLAN.md`](MASTER_PLAN.md) — biến tài liệu bất kỳ (PDF/Word/ảnh) thành ngân hàng câu hỏi có cấu trúc, dùng cho Học / Ôn / Thi / Live. File HANDOFF này lo phần "chạy & deploy + hiện trạng"; MASTER_PLAN lo phần "sản phẩm nên đi tới đâu".
 
 ---
 
