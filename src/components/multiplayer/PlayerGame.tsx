@@ -31,7 +31,10 @@ export default function PlayerGame({ onExit }: { onExit: () => void }) {
   const [secondsLeft, setSecondsLeft] = useState(0);
 
   const roomRef = useRef<Room | null>(null);
-  roomRef.current = room;
+
+  useEffect(() => {
+    roomRef.current = room;
+  }, [room]);
 
   const doJoin = async () => {
     setError(null);
@@ -53,14 +56,6 @@ export default function PlayerGame({ onExit }: { onExit: () => void }) {
       setJoining(false);
     }
   };
-
-  // Câu mới -> reset trạng thái trả lời.
-  useEffect(() => {
-    if (room?.status === "question") {
-      setResult(null);
-      setAnsweredIdx((prev) => (prev === room.current_index ? prev : null));
-    }
-  }, [room?.status, room?.current_index]);
 
   // Đồng hồ đếm ngược.
   useEffect(() => {
@@ -180,6 +175,7 @@ export default function PlayerGame({ onExit }: { onExit: () => void }) {
   const q = room.quiz.questions[room.current_index];
   const revealed = room.status === "reveal";
   const iAnswered = answeredIdx === room.current_index;
+  const activeResult = iAnswered ? result : null;
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 p-4 text-white sm:p-6">
@@ -203,9 +199,9 @@ export default function PlayerGame({ onExit }: { onExit: () => void }) {
         <div className={`flex flex-col items-center gap-3 rounded-3xl p-5 text-center ${GLASS}`}>
           {!iAnswered ? (
             <p className="text-lg font-bold text-white/80">Bạn chưa trả lời câu này.</p>
-          ) : result?.correct ? (
+          ) : activeResult?.correct ? (
             <p className="text-xl font-bold text-emerald-200">
-              🎉 Đúng! +{result.points.toLocaleString("vi-VN")} điểm
+              🎉 Đúng! +{activeResult.points.toLocaleString("vi-VN")} điểm
             </p>
           ) : (
             <p className="text-xl font-bold text-rose-200">Sai rồi! +0 điểm</p>

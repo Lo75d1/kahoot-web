@@ -8,7 +8,8 @@ export default function SoundToggle() {
 
   useEffect(() => {
     initSound();
-    setOn(soundEnabled());
+    const frame = requestAnimationFrame(() => setOn(soundEnabled()));
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   return (

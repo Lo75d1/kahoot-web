@@ -36,7 +36,10 @@ export default function HostGame({
   const prevCountRef = useRef(0);
   const endedRef = useRef(false);
   const roomRef = useRef<Room | null>(null);
-  roomRef.current = room;
+
+  useEffect(() => {
+    roomRef.current = room;
+  }, [room]);
 
   // Tạo phòng + đăng ký realtime (chỉ 1 lần).
   useEffect(() => {

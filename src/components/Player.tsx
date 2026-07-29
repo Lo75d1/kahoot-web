@@ -30,7 +30,9 @@ export default function Player({
   const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>("answering");
   const [selected, setSelected] = useState<number | null>(null);
-  const [timeLeftMs, setTimeLeftMs] = useState(0);
+  const [timeLeftMs, setTimeLeftMs] = useState(
+    () => quiz.questions[0]?.timeLimit * 1000 || 0,
+  );
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
   const [lastEarned, setLastEarned] = useState(0);
@@ -84,8 +86,6 @@ export default function Player({
     answeredRef.current = false;
     questionStartRef.current = Date.now();
     const deadline = questionStartRef.current + question.timeLimit * 1000;
-    setTimeLeftMs(question.timeLimit * 1000);
-
     timerRef.current = setInterval(() => {
       const left = deadline - Date.now();
       if (left <= 0) {
@@ -108,15 +108,18 @@ export default function Player({
     setStreak(0);
     setLastEarned(0);
     setResults([]);
+    setTimeLeftMs(quiz.questions[0]?.timeLimit * 1000 || 0);
   };
 
   const next = () => {
     if (index + 1 >= quiz.questions.length) {
       setDone(true);
     } else {
-      setIndex((i) => i + 1);
+      const nextIndex = index + 1;
+      setIndex(nextIndex);
       setSelected(null);
       setPhase("answering");
+      setTimeLeftMs(quiz.questions[nextIndex].timeLimit * 1000);
     }
   };
 
