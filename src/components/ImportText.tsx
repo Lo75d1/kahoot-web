@@ -247,10 +247,10 @@ export default function ImportText({
         {fileInfo && <p className="text-xs text-emerald-100">✓ {fileInfo}</p>}
         <div className="flex flex-wrap items-center gap-2">
           <label className={`${GHOST} cursor-pointer px-4 py-2 text-sm`}>
-            📎 Tải PDF / Word / Excel / văn bản
+            📎 Tải PDF / Word / CSV / văn bản
             <input
               type="file"
-              accept=".pdf,.docx,.xlsx,.xls,.txt,.csv,.md,.tsv"
+              accept=".pdf,.docx,.txt,.csv,.md,.tsv"
               className="hidden"
               onChange={(e) => onFile(e.target.files?.[0])}
             />

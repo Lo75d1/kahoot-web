@@ -21,6 +21,8 @@ import PlayerGame from "./multiplayer/PlayerGame";
 import AiCreator from "./AiCreator";
 import AuthScreen from "./AuthScreen";
 import ImportText from "./ImportText";
+import LearningDashboard from "./LearningDashboard";
+import ClassroomHub from "./ClassroomHub";
 import { saveAttempt, type LearningMode } from "@/lib/learning";
 
 type Mode =
@@ -31,7 +33,9 @@ type Mode =
   | "join"
   | "ai"
   | "auth"
-  | "import";
+  | "import"
+  | "history"
+  | "classes";
 
 // Multiplayer cần Supabase (độc lập với đăng nhập).
 const cloud = isSupabaseConfigured;
@@ -170,6 +174,20 @@ export default function QuizApp() {
     );
   }
 
+  if (mode === "history") {
+    return <LearningDashboard onBack={() => setMode("bank")} />;
+  }
+
+  if (mode === "classes" && user) {
+    return (
+      <ClassroomHub
+        userId={user.id}
+        quizzes={quizzes}
+        onBack={() => setMode("bank")}
+      />
+    );
+  }
+
   if (mode === "editor") {
     return (
       <QuizEditor
@@ -243,6 +261,21 @@ export default function QuizApp() {
           </button>
         </div>
       </div>
+
+      <button
+        onClick={() => setMode("history")}
+        className="self-start rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white/85 transition hover:bg-white/20"
+      >
+        📊 Xem tiến độ học
+      </button>
+      {user && cloud && (
+        <button
+          onClick={() => setMode("classes")}
+          className="self-start rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white/85 transition hover:bg-white/20"
+        >
+          🏫 Lớp học &amp; giao bài
+        </button>
+      )}
 
       {/* Toggle trộn câu hỏi */}
       <button

@@ -36,6 +36,7 @@ export default function Player({
   const [phase, setPhase] = useState<Phase>("answering");
   const [selected, setSelected] = useState<number | null>(null);
   const [selectedMany, setSelectedMany] = useState<number[]>([]);
+  const [textResponse, setTextResponse] = useState("");
   const [timeLeftMs, setTimeLeftMs] = useState(
     () => quiz.questions[0]?.timeLimit * 1000 || 0,
   );
@@ -60,21 +61,35 @@ export default function Player({
   };
 
   const reveal = useCallback(
-    (choice: number | number[] | null) => {
+    (choice: number | number[] | string | null) => {
       if (answeredRef.current || !question) return;
       answeredRef.current = true;
       clearTimer();
 
       const responseMs =
         choice === null ? null : Date.now() - questionStartRef.current;
-      const picked = Array.isArray(choice) ? choice : choice === null ? [] : [choice];
+      const isTextChoice = typeof choice === "string";
+      const picked = Array.isArray(choice)
+        ? choice
+        : typeof choice === "number"
+          ? [choice]
+          : [];
       const expected = question.answers
         .map((answer, answerIndex) => (answer.correct ? answerIndex : -1))
         .filter((answerIndex) => answerIndex >= 0);
-      const correct =
-        picked.length > 0 &&
-        picked.length === expected.length &&
-        picked.every((answerIndex) => expected.includes(answerIndex));
+      const normalize = (value: string) =>
+        value
+          .normalize("NFC")
+          .trim()
+          .toLocaleLowerCase("vi-VN")
+          .replace(/\s+/g, " ");
+      const correct = isTextChoice
+        ? question.answers
+            .filter((answer) => answer.correct)
+            .some((answer) => normalize(answer.text) === normalize(choice))
+        : picked.length > 0 &&
+          picked.length === expected.length &&
+          picked.every((answerIndex) => expected.includes(answerIndex));
 
       const newStreak = correct ? streak + 1 : 0;
       const base = correct
@@ -122,6 +137,7 @@ export default function Player({
     setPhase("answering");
     setSelected(null);
     setSelectedMany([]);
+    setTextResponse("");
     setScore(0);
     setStreak(0);
     setLastEarned(0);
@@ -142,6 +158,7 @@ export default function Player({
       setIndex(nextIndex);
       setSelected(null);
       setSelectedMany([]);
+      setTextResponse("");
       setHintVisible(false);
       setPhase("answering");
       setTimeLeftMs(quiz.questions[nextIndex].timeLimit * 1000);
@@ -283,6 +300,46 @@ export default function Player({
         </div>
       </div>
 
+      {question.type === "short_answer" || question.type === "fill_blank" ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-3">
+          <input
+            value={textResponse}
+            onChange={(event) => setTextResponse(event.target.value)}
+            disabled={phase === "revealed"}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && textResponse.trim()) {
+                reveal(textResponse);
+              }
+            }}
+            placeholder={
+              question.type === "fill_blank"
+                ? "Điền phần còn thiếu…"
+                : "Nhập câu trả lời…"
+            }
+            className="w-full max-w-xl rounded-2xl border border-white/40 bg-white/90 px-5 py-4 text-lg font-semibold text-slate-900 shadow-lg outline-none focus:ring-2 focus:ring-amber-200"
+          />
+          {phase === "answering" && (
+            <button
+              onClick={() => reveal(textResponse)}
+              disabled={!textResponse.trim()}
+              className="rounded-full border border-amber-100/60 bg-amber-300 px-8 py-3 font-extrabold text-emerald-950 shadow-lg transition hover:bg-amber-200 disabled:opacity-40"
+            >
+              Chốt câu trả lời
+            </button>
+          )}
+          {phase === "revealed" && mode !== "exam" && (
+            <p className="text-sm text-white/75">
+              Đáp án:{" "}
+              <b className="text-emerald-100">
+                {question.answers
+                  .filter((answer) => answer.correct)
+                  .map((answer) => answer.text)
+                  .join(" / ")}
+              </b>
+            </p>
+          )}
+        </div>
+      ) : (
       <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
         {question.answers.map((ans, i) => {
           const revealed = phase === "revealed";
@@ -339,6 +396,7 @@ export default function Player({
           );
         })}
       </div>
+      )}
 
       {phase === "answering" && question.type === "multiple_choice" && (
         <button
@@ -356,7 +414,9 @@ export default function Player({
         >
           {mode === "exam" ? (
             <p className="text-xl font-bold text-sky-100">✓ Đã ghi nhận đáp án</p>
-          ) : selected === null && selectedMany.length === 0 ? (
+          ) : selected === null &&
+            selectedMany.length === 0 &&
+            !textResponse.trim() ? (
             <p className="text-xl font-bold">⏰ Hết giờ! +0 điểm</p>
           ) : lastCorrect ? (
             <p className="text-xl font-bold text-emerald-200">

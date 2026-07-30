@@ -165,3 +165,35 @@ create index if not exists attempts_user_completed_idx
   on public.attempts (user_id, completed_at desc);
 create index if not exists review_cards_due_idx
   on public.review_cards (user_id, due_at);
+
+create or replace function public.join_class(
+  requested_code text,
+  requested_name text default ''
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  target_class_id uuid;
+begin
+  if auth.uid() is null then
+    raise exception 'Bạn cần đăng nhập để vào lớp.';
+  end if;
+  select id into target_class_id
+  from public.classes
+  where upper(join_code) = upper(trim(requested_code));
+  if target_class_id is null then
+    raise exception 'Không tìm thấy lớp với mã này.';
+  end if;
+  insert into public.class_members (class_id, user_id, display_name)
+  values (target_class_id, auth.uid(), left(trim(requested_name), 80))
+  on conflict (class_id, user_id)
+  do update set display_name = excluded.display_name;
+  return target_class_id;
+end;
+$$;
+
+revoke all on function public.join_class(text, text) from public;
+grant execute on function public.join_class(text, text) to authenticated;

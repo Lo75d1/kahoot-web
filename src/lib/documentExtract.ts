@@ -5,7 +5,7 @@ const MAX_TEXT_CHARS = 500_000;
 
 export interface ExtractedDocument {
   text: string;
-  kind: "text" | "pdf" | "docx" | "spreadsheet";
+  kind: "text" | "pdf" | "docx";
   pages?: number;
   truncated: boolean;
 }
@@ -43,24 +43,12 @@ export async function extractDocument(file: File): Promise<ExtractedDocument> {
     text = result.value;
     kind = "docx";
   } else if (
-    /\.(xlsx|xls)$/.test(name) ||
-    file.type.includes("spreadsheet") ||
-    file.type.includes("excel")
-  ) {
-    const XLSX = await import("xlsx");
-    const workbook = XLSX.read(bytes, { type: "array" });
-    text = workbook.SheetNames.map((sheetName) => {
-      const csv = XLSX.utils.sheet_to_csv(workbook.Sheets[sheetName]);
-      return `# Sheet: ${sheetName}\n${csv}`;
-    }).join("\n\n");
-    kind = "spreadsheet";
-  } else if (
     /\.(txt|csv|tsv|md)$/.test(name) ||
     file.type.startsWith("text/")
   ) {
     text = new TextDecoder("utf-8").decode(bytes);
   } else {
-    throw new Error("Chưa hỗ trợ loại tệp này. Dùng PDF, DOCX, XLSX, CSV hoặc TXT.");
+    throw new Error("Chưa hỗ trợ loại tệp này. Dùng PDF, DOCX, CSV hoặc TXT.");
   }
 
   text = text.replace(/\u0000/g, "").trim();

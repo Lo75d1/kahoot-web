@@ -3,7 +3,6 @@
 
 import type { Quiz } from "./types";
 import { supabase } from "./supabase";
-import { computeScore } from "./scoring";
 
 export type RoomStatus = "lobby" | "question" | "reveal" | "ended";
 
@@ -15,6 +14,7 @@ export interface Room {
   status: RoomStatus;
   current_index: number;
   question_started_at: string | null;
+  revealed_correct_indexes: number[];
 }
 
 export interface Player {
@@ -45,17 +45,43 @@ function genPin(): string {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
+function secretKey(kind: "host" | "player", id: string) {
+  return `kashot-live-${kind}-${id}`;
+}
+
+function createSecret(): string {
+  return `${crypto.randomUUID()}${crypto.randomUUID()}`;
+}
+
+function saveSecret(kind: "host" | "player", id: string, secret: string) {
+  sessionStorage.setItem(secretKey(kind, id), secret);
+}
+
+function getSecret(kind: "host" | "player", id: string): string {
+  const secret = sessionStorage.getItem(secretKey(kind, id));
+  if (!secret) throw new Error("Phiên điều khiển đã hết. Hãy vào lại phòng.");
+  return secret;
+}
+
 export async function createRoom(quiz: Quiz, hostId: string): Promise<Room> {
   const client = sb();
   for (let i = 0; i < 6; i++) {
     const pin = genPin();
-    const { data, error } = await client
-      .from("rooms")
-      .insert({ pin, host_id: hostId, quiz, status: "lobby", current_index: 0 })
-      .select()
-      .single();
-    if (!error) return data as Room;
-    if (error.code !== "23505") throw error; // 23505 = trùng PIN, thử lại
+    const secret = createSecret();
+    const { data, error } = await client.rpc("create_live_room", {
+      requested_pin: pin,
+      requested_host_id: hostId,
+      requested_quiz: quiz,
+      host_secret: secret,
+    });
+    if (!error && data) {
+      const room = data as Room;
+      saveSecret("host", room.id, secret);
+      return room;
+    }
+    if (!error || error.code !== "23505") {
+      throw error ?? new Error("Không tạo được phòng.");
+    }
   }
   throw new Error("Không tạo được mã PIN, thử lại.");
 }
@@ -82,14 +108,20 @@ export async function joinRoom(
     .eq("room_id", room.id)
     .eq("client_id", clientId)
     .maybeSingle();
-  if (existing) return { room: room as Room, player: existing as Player };
+  if (existing) {
+    const stored = sessionStorage.getItem(secretKey("player", existing.id));
+    if (stored) return { room: room as Room, player: existing as Player };
+  }
 
-  const { data: player, error: pErr } = await client
-    .from("players")
-    .insert({ room_id: room.id, client_id: clientId, name: name.trim() })
-    .select()
-    .single();
+  const playerSecret = createSecret();
+  const { data: player, error: pErr } = await client.rpc("join_live_room", {
+    requested_pin: pin.trim(),
+    requested_name: name.trim(),
+    requested_client_id: clientId,
+    player_secret: playerSecret,
+  });
   if (pErr) throw pErr;
+  saveSecret("player", (player as Player).id, playerSecret);
   return { room: room as Room, player: player as Player };
 }
 
@@ -114,35 +146,31 @@ export async function fetchRoom(roomId: string): Promise<Room> {
 }
 
 export async function startGame(roomId: string) {
-  const { error } = await sb()
-    .from("rooms")
-    .update({
-      status: "question",
-      current_index: 0,
-      question_started_at: new Date().toISOString(),
-    })
-    .eq("id", roomId);
+  const { error } = await sb().rpc("control_live_room", {
+    requested_room_id: roomId,
+    host_secret: getSecret("host", roomId),
+    requested_action: "start",
+  });
   if (error) throw error;
 }
 
 export async function revealQuestion(roomId: string) {
-  const { error } = await sb()
-    .from("rooms")
-    .update({ status: "reveal" })
-    .eq("id", roomId);
+  const { error } = await sb().rpc("control_live_room", {
+    requested_room_id: roomId,
+    host_secret: getSecret("host", roomId),
+    requested_action: "reveal",
+  });
   if (error) throw error;
 }
 
 export async function nextQuestion(roomId: string, index: number, total: number) {
-  const patch =
-    index + 1 >= total
-      ? { status: "ended" as const }
-      : {
-          status: "question" as const,
-          current_index: index + 1,
-          question_started_at: new Date().toISOString(),
-        };
-  const { error } = await sb().from("rooms").update(patch).eq("id", roomId);
+  void index;
+  void total;
+  const { error } = await sb().rpc("control_live_room", {
+    requested_room_id: roomId,
+    host_secret: getSecret("host", roomId),
+    requested_action: "next",
+  });
   if (error) throw error;
 }
 
@@ -152,45 +180,29 @@ export async function submitAnswer(
   player: Player,
   choice: number,
 ): Promise<{ correct: boolean; points: number } | null> {
-  const q = room.quiz.questions[room.current_index];
-  const correct = !!q.answers[choice]?.correct;
-  const startedAt = room.question_started_at
-    ? Date.parse(room.question_started_at)
-    : Date.now();
-  const responseMs = Date.now() - startedAt;
-  const points = correct
-    ? computeScore(true, responseMs, q.timeLimit, q.points)
-    : 0;
-
-  const client = sb();
-  const { error } = await client.from("answers").insert({
-    room_id: room.id,
-    player_id: player.id,
-    question_index: room.current_index,
-    choice,
-    is_correct: correct,
-    points,
+  const { data, error } = await sb().rpc("submit_live_answer", {
+    requested_room_id: room.id,
+    requested_player_id: player.id,
+    player_secret: getSecret("player", player.id),
+    requested_choice: choice,
   });
   if (error) {
-    if (error.code === "23505") return null; // đã trả lời câu này
+    if (error.message.includes("đã trả lời")) return null;
     throw error;
   }
-  if (points > 0) {
-    const { data: cur } = await client
-      .from("players")
-      .select("score")
-      .eq("id", player.id)
-      .single();
-    await client
-      .from("players")
-      .update({ score: (cur?.score ?? 0) + points })
-      .eq("id", player.id);
-  }
-  return { correct, points };
+  const result = Array.isArray(data) ? data[0] : data;
+  return {
+    correct: Boolean(result?.correct),
+    points: Number(result?.points ?? 0),
+  };
 }
 
 export async function deleteRoom(roomId: string) {
-  const { error } = await sb().from("rooms").delete().eq("id", roomId);
+  const { error } = await sb().rpc("control_live_room", {
+    requested_room_id: roomId,
+    host_secret: getSecret("host", roomId),
+    requested_action: "close",
+  });
   if (error) throw error;
 }
 
@@ -198,12 +210,12 @@ export async function answeredCount(
   roomId: string,
   index: number,
 ): Promise<number> {
-  const { count } = await sb()
-    .from("answers")
-    .select("*", { count: "exact", head: true })
-    .eq("room_id", roomId)
-    .eq("question_index", index);
-  return count ?? 0;
+  const { data, error } = await sb().rpc("live_answer_count", {
+    requested_room_id: roomId,
+    requested_question_index: index,
+  });
+  if (error) throw error;
+  return Number(data ?? 0);
 }
 
 export function subscribeRoom(roomId: string, cb: (room: Room) => void) {

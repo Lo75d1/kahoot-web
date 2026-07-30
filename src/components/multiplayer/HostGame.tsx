@@ -234,7 +234,8 @@ export default function HostGame({
       <div key={`ans-${room.current_index}`} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {q.answers.map((a, i) => {
           const t = TILE[i % TILE.length];
-          const good = revealed && a.correct;
+          const good =
+            revealed && room.revealed_correct_indexes?.includes(i);
           return (
             <div
               key={i}

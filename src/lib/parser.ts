@@ -93,7 +93,7 @@ function parseQuestion(raw: unknown, index: number): Question {
   }
   const minAnswers = type === "essay" ? 0 : type === "short_answer" || type === "fill_blank" ? 1 : 2;
   if (q.answers.length < minAnswers) {
-    throw new QuizParseError(`${where}: cần ít nhất 2 đáp án.`);
+    throw new QuizParseError(`${where}: cần ít nhất ${minAnswers} đáp án.`);
   }
   if (q.answers.length > MAX_ANSWERS) {
     throw new QuizParseError(`${where}: tối đa ${MAX_ANSWERS} đáp án.`);

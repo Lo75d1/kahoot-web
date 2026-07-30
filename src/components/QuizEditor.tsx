@@ -151,6 +151,23 @@ export default function QuizEditor({
             ],
           };
         }
+        if (type === "short_answer" || type === "fill_blank") {
+          return {
+            ...q,
+            type,
+            answers: [{ text: q.answers.find((answer) => answer.correct)?.text ?? "", correct: true }],
+          };
+        }
+        if (q.answers.length < 2) {
+          return {
+            ...q,
+            type,
+            answers: [
+              ...q.answers,
+              { text: "", correct: false },
+            ],
+          };
+        }
         return { ...q, type };
       }),
     );
@@ -368,6 +385,8 @@ export default function QuizEditor({
                 <option value="single_choice">Một đáp án</option>
                 <option value="multiple_choice">Nhiều đáp án</option>
                 <option value="true_false">Đúng / Sai</option>
+                <option value="short_answer">Trả lời ngắn</option>
+                <option value="fill_blank">Điền khuyết</option>
               </select>
             </label>
             <label className="flex flex-col gap-1 text-xs font-semibold">
@@ -429,7 +448,13 @@ export default function QuizEditor({
 
           <div className="flex flex-col gap-2">
             <span className="text-xs font-semibold text-white/80">
-              Đáp án ({q.type === "multiple_choice" ? "có thể chọn nhiều" : "chọn một đáp án đúng"})
+              Đáp án (
+              {q.type === "multiple_choice"
+                ? "có thể chọn nhiều"
+                : q.type === "short_answer" || q.type === "fill_blank"
+                  ? "nhập đáp án chuẩn; có thể thêm cách viết tương đương"
+                  : "chọn một đáp án đúng"}
+              )
             </span>
             {q.answers.map((a, ai) => (
               <div key={ai} className="flex items-center gap-2">
@@ -438,7 +463,11 @@ export default function QuizEditor({
                   name={`correct-${qi}`}
                   checked={a.correct}
                   onChange={() => setCorrect(qi, ai)}
-                  className="h-5 w-5 shrink-0 accent-emerald-400"
+                  className={`h-5 w-5 shrink-0 accent-emerald-400 ${
+                    q.type === "short_answer" || q.type === "fill_blank"
+                      ? "invisible"
+                      : ""
+                  }`}
                   aria-label={`Đáp án ${ai + 1} đúng`}
                 />
                 <input
@@ -457,7 +486,7 @@ export default function QuizEditor({
                 </button>
               </div>
             ))}
-            {q.answers.length < 4 && (
+            {q.answers.length < 4 && q.type !== "true_false" && (
               <button
                 onClick={() => addAnswer(qi)}
                 className={`${BTN_GHOST} self-start text-sm`}
