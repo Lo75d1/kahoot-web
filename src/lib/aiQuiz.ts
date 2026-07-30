@@ -67,6 +67,7 @@ export async function createQuizWithAi(input: {
   source: string;
   mode: "extract" | "generate" | "outline";
   count?: number;
+  safetyIdentifier?: string;
 }): Promise<Quiz> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("Máy chủ chưa cấu hình OPENAI_API_KEY.");
@@ -87,6 +88,7 @@ export async function createQuizWithAi(input: {
     },
     body: JSON.stringify({
       model,
+      safety_identifier: input.safetyIdentifier,
       reasoning: { effort: "low" },
       text: {
         verbosity: "low",
@@ -119,5 +121,12 @@ export async function createQuizWithAi(input: {
     throw new Error(payload.error?.message || "Dịch vụ AI chưa phản hồi.");
   }
   if (!payload.output_text) throw new Error("AI không trả về bộ đề.");
-  return parseQuiz(payload.output_text);
+  const quiz = parseQuiz(payload.output_text);
+  return {
+    ...quiz,
+    questions: quiz.questions.map((question) => ({
+      ...question,
+      status: "needs_review",
+    })),
+  };
 }

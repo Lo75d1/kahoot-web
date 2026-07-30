@@ -71,4 +71,19 @@ describe("parseQuiz", () => {
       status: "approved",
     });
   });
+
+  it("accepts a short answer with one canonical response", () => {
+    const quiz = parseQuiz({
+      questions: [
+        {
+          type: "short_answer",
+          text: "Ký hiệu hóa học của oxy?",
+          answers: [{ text: "O", correct: true }],
+        },
+      ],
+    });
+
+    expect(quiz.questions[0].type).toBe("short_answer");
+    expect(quiz.questions[0].answers).toHaveLength(1);
+  });
 });

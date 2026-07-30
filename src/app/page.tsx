@@ -28,7 +28,7 @@ export default function Home() {
       <div className="relative z-10 flex flex-1 flex-col">
         <QuizApp />
         <footer className="pb-4 text-center text-xs text-white/50">
-          Quiz · Next.js + Supabase
+          Kashot · Học chắc, nhớ lâu
         </footer>
       </div>
     </main>

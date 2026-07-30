@@ -15,8 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Quiz — học & chơi",
-  description: "Web quiz kiểu Kahoot: tạo đề, chơi solo & nhiều người.",
+  title: "Kashot — học, ôn, thi và chơi",
+  description:
+    "Biến tài liệu thành bộ câu hỏi có cấu trúc để học, ôn, thi và chơi trực tiếp.",
 };
 
 export default function RootLayout({

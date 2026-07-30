@@ -23,6 +23,10 @@ import AuthScreen from "./AuthScreen";
 import ImportText from "./ImportText";
 import LearningDashboard from "./LearningDashboard";
 import ClassroomHub from "./ClassroomHub";
+import {
+  saveAssignmentAttempt,
+  type Assignment,
+} from "@/lib/classroom";
 import { saveAttempt, type LearningMode } from "@/lib/learning";
 
 type Mode =
@@ -52,6 +56,9 @@ export default function QuizApp() {
   const [hostQuiz, setHostQuiz] = useState<Quiz | null>(null);
   const [shuffleOn, setShuffleOn] = useState(false);
   const [playMode, setPlayMode] = useState<LearningMode>("practice");
+  const [activeAssignment, setActiveAssignment] = useState<Assignment | null>(
+    null,
+  );
   const [toast, setToast] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
@@ -132,6 +139,7 @@ export default function QuizApp() {
   };
 
   const startPlay = (q: SavedQuiz) => {
+    setActiveAssignment(null);
     setPlayQuiz(shuffleOn ? shuffleQuiz(q) : q);
     setMode("play");
   };
@@ -143,6 +151,16 @@ export default function QuizApp() {
         mode={playMode}
         onComplete={(results, score) => {
           saveAttempt(playQuiz, playMode, results, score);
+          if (activeAssignment) {
+            saveAssignmentAttempt({
+              assignment: activeAssignment,
+              quiz: playQuiz,
+              results,
+              score,
+            }).catch(() =>
+              flash("Đã lưu trên máy; chưa đồng bộ được kết quả lên lớp."),
+            );
+          }
         }}
         onExit={() => setMode("bank")}
       />
@@ -183,6 +201,14 @@ export default function QuizApp() {
       <ClassroomHub
         userId={user.id}
         quizzes={quizzes}
+        onPlayAssignment={async (assignment: Assignment) => {
+          const quiz = await supabaseStore.get(assignment.quiz_id);
+          if (!quiz) throw new Error("Không tìm thấy bộ đề của bài giao.");
+          setPlayMode(assignment.mode);
+          setActiveAssignment(assignment);
+          setPlayQuiz(quiz);
+          setMode("play");
+        }}
         onBack={() => setMode("bank")}
       />
     );
@@ -203,6 +229,9 @@ export default function QuizApp() {
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 p-4 text-white sm:p-6">
       <div className="flex items-end justify-between gap-3">
         <div>
+          <p className="mb-1 text-xs font-bold uppercase tracking-[0.3em] text-amber-200/80">
+            Kashot
+          </p>
           <h1 className="text-3xl font-black drop-shadow-sm sm:text-4xl">
             Ngân hàng đề
           </h1>

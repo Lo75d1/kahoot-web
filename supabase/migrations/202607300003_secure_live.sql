@@ -6,6 +6,9 @@ create extension if not exists pgcrypto;
 alter table public.rooms
   add column if not exists revealed_correct_indexes integer[] not null default '{}';
 
+create unique index if not exists players_room_client_unique
+  on public.players (room_id, client_id);
+
 create table if not exists public.room_keys (
   room_id uuid primary key references public.rooms(id) on delete cascade,
   host_secret_hash bytea not null,

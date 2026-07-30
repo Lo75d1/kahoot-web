@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Quiz, RoundResult } from "@/lib/types";
-import { computeScore, streakBonus } from "@/lib/scoring";
+import {
+  computeScore,
+  isQuestionResponseCorrect,
+  streakBonus,
+} from "@/lib/scoring";
 import { sfx } from "@/lib/sound";
 import type { LearningMode } from "@/lib/learning";
 
@@ -68,28 +72,12 @@ export default function Player({
 
       const responseMs =
         choice === null ? null : Date.now() - questionStartRef.current;
-      const isTextChoice = typeof choice === "string";
       const picked = Array.isArray(choice)
         ? choice
         : typeof choice === "number"
           ? [choice]
           : [];
-      const expected = question.answers
-        .map((answer, answerIndex) => (answer.correct ? answerIndex : -1))
-        .filter((answerIndex) => answerIndex >= 0);
-      const normalize = (value: string) =>
-        value
-          .normalize("NFC")
-          .trim()
-          .toLocaleLowerCase("vi-VN")
-          .replace(/\s+/g, " ");
-      const correct = isTextChoice
-        ? question.answers
-            .filter((answer) => answer.correct)
-            .some((answer) => normalize(answer.text) === normalize(choice))
-        : picked.length > 0 &&
-          picked.length === expected.length &&
-          picked.every((answerIndex) => expected.includes(answerIndex));
+      const correct = isQuestionResponseCorrect(question, choice);
 
       const newStreak = correct ? streak + 1 : 0;
       const base = correct

@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kashot
 
-## Getting Started
+Kashot là web học, ôn, thi và chơi quiz trực tiếp. Giáo viên có thể tạo đề thủ công, nhập marker/CSV, tải PDF/DOCX hoặc dùng AI trên server để nhận diện và tạo câu hỏi có cấu trúc.
 
-First, run the development server:
+## Chạy local
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Mở [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Sao chép `.env.local.example` thành `.env.local`. Không có Supabase thì ngân hàng đề vẫn chạy bằng localStorage; đăng nhập, lớp học và multiplayer cần Supabase.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Kiểm tra
 
-## Learn More
+```bash
+npm run test
+npm run lint
+npm run build
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Cơ sở dữ liệu
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Chạy các migration trong `supabase/migrations/` theo thứ tự tên file. Xem [HANDOFF.md](HANDOFF.md) để biết cấu hình Supabase, Vercel và kiến trúc.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## AI trực tiếp
 
-## Deploy on Vercel
+AI là tùy chọn:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```env
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-5.6-terra
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Không có khóa, người dùng vẫn có thể dùng nhập tài liệu thông thường và luồng AI ngoài.

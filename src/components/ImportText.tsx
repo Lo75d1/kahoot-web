@@ -50,6 +50,7 @@ export default function ImportText({
   const [error, setError] = useState<string | null>(null);
   const [working, setWorking] = useState<string | null>(null);
   const [fileInfo, setFileInfo] = useState<string | null>(null);
+  const [aiPreview, setAiPreview] = useState<Quiz | null>(null);
 
   const onFile = async (file: File | undefined) => {
     if (!file) return;
@@ -118,7 +119,7 @@ export default function ImportText({
             : result.error || "AI không xử lý được tài liệu.",
         );
       }
-      onSave(result);
+      setAiPreview(result);
     } catch (e) {
       setError(e instanceof Error ? e.message : "AI không xử lý được tài liệu.");
     } finally {
@@ -296,6 +297,57 @@ export default function ImportText({
             Câu AI chưa chắc đáp án sẽ được đánh dấu “Cần kiểm tra”.
           </p>
         </div>
+
+        {aiPreview && (
+          <section className="rounded-2xl border border-emerald-200/30 bg-emerald-300/10 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="font-bold text-emerald-100">
+                  Bản nháp AI: {aiPreview.title}
+                </p>
+                <p className="text-xs text-white/65">
+                  {aiPreview.questions.length} câu · tất cả đang chờ bạn kiểm tra
+                </p>
+              </div>
+              <button
+                onClick={() => setAiPreview(null)}
+                className="text-sm text-white/65 underline"
+              >
+                Bỏ bản nháp
+              </button>
+            </div>
+            <div className="mt-3 max-h-72 space-y-2 overflow-y-auto pr-1">
+              {aiPreview.questions.map((question, index) => (
+                <article
+                  key={`${index}-${question.text}`}
+                  className="rounded-xl border border-white/15 bg-black/10 p-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm font-semibold">
+                      {index + 1}. {question.text}
+                    </p>
+                    <span className="shrink-0 rounded-full bg-amber-300/20 px-2 py-0.5 text-[10px] text-amber-100">
+                      {Math.round((question.confidence ?? 0) * 100)}%
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-emerald-100/80">
+                    Đúng:{" "}
+                    {question.answers
+                      .filter((answer) => answer.correct)
+                      .map((answer) => answer.text)
+                      .join(" / ")}
+                  </p>
+                </article>
+              ))}
+            </div>
+            <button
+              onClick={() => onSave(aiPreview)}
+              className={`${LIGHT} mt-3`}
+            >
+              Lưu bản nháp để kiểm tra kỹ
+            </button>
+          </section>
+        )}
 
         <button
           onClick={doImport}

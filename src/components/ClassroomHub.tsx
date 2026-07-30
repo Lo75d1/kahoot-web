@@ -6,9 +6,11 @@ import {
   createAssignment,
   createClass,
   joinClass,
+  listAssignmentResults,
   listAssignments,
   listClasses,
   type Assignment,
+  type AssignmentResult,
   type Classroom,
 } from "@/lib/classroom";
 
@@ -21,14 +23,17 @@ export default function ClassroomHub({
   userId,
   quizzes,
   onBack,
+  onPlayAssignment,
 }: {
   userId: string;
   quizzes: SavedQuiz[];
   onBack: () => void;
+  onPlayAssignment: (assignment: Assignment) => Promise<void>;
 }) {
   const [classes, setClasses] = useState<Classroom[]>([]);
   const [selectedId, setSelectedId] = useState("");
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [results, setResults] = useState<AssignmentResult[]>([]);
   const [newName, setNewName] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -65,7 +70,14 @@ export default function ClassroomHub({
   useEffect(() => {
     if (!selectedId) return;
     listAssignments(selectedId)
-      .then(setAssignments)
+      .then(async (nextAssignments) => {
+        setAssignments(nextAssignments);
+        setResults(
+          await listAssignmentResults(
+            nextAssignments.map((assignment) => assignment.id),
+          ),
+        );
+      })
       .catch((reason) =>
         setError(reason instanceof Error ? reason.message : "Không tải được bài giao."),
       );
@@ -253,14 +265,47 @@ export default function ClassroomHub({
                       key={assignment.id}
                       className="flex items-center justify-between rounded-xl border border-white/15 bg-white/5 px-4 py-3"
                     >
-                      <span className="font-semibold">{assignment.title}</span>
-                      <span className="text-xs text-white/60">
-                        {assignment.mode === "learn"
-                          ? "Học"
-                          : assignment.mode === "exam"
-                            ? "Thi"
-                            : "Ôn"}
-                      </span>
+                      <div>
+                        <span className="font-semibold">{assignment.title}</span>
+                        <span className="ml-2 text-xs text-white/60">
+                          {assignment.mode === "learn"
+                            ? "Học"
+                            : assignment.mode === "exam"
+                              ? "Thi"
+                              : "Ôn"}
+                        </span>
+                        {isOwner && (
+                          <span className="ml-2 text-xs text-emerald-100/70">
+                            {(() => {
+                              const assignmentResults = results.filter(
+                                (result) =>
+                                  result.assignment_id === assignment.id,
+                              );
+                              if (assignmentResults.length === 0) return "0 lượt";
+                              const average =
+                                assignmentResults.reduce(
+                                  (sum, result) =>
+                                    sum +
+                                    result.correct_count /
+                                      Math.max(1, result.total_count),
+                                  0,
+                                ) / assignmentResults.length;
+                              return `${assignmentResults.length} lượt · ${Math.round(
+                                average * 100,
+                              )}%`;
+                            })()}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() =>
+                          run(async () => onPlayAssignment(assignment))
+                        }
+                        disabled={busy}
+                        className="rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-sm font-bold"
+                      >
+                        Mở bài
+                      </button>
                     </div>
                   ))
                 )}

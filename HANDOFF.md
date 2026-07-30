@@ -64,10 +64,15 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<publishable key: Supabase → Settings → API �
 > 🔒 **DB password (kết nối Postgres trực tiếp) là BÍ MẬT — không lưu vào file này / repo.** Chỉ dùng khi chạy migration trực tiếp.
 
 ### Chạy schema (SQL)
-Chạy 3 file **theo thứ tự** trong Supabase → SQL Editor (hoặc qua `psql`/`pg`):
-1. `supabase/schema.sql` — bảng `quizzes` (ngân hàng đề)
-2. `supabase/m3_schema.sql` — bảng `rooms` / `players` / `answers` + **bật Realtime** (publication `supabase_realtime`)
-3. `supabase/auth_schema.sql` — thêm cột `owner_id` + **RLS theo chủ sở hữu** (giáo viên chỉ thấy đề của mình)
+
+Với project mới, chạy các file trong `supabase/migrations/` theo thứ tự tên:
+
+1. `202607290001_initial.sql` — baseline ngân hàng đề, auth và multiplayer.
+2. `202607300001_question_sets_v2.sql` — metadata bộ đề V2.
+3. `202607300002_learning_and_classes.sql` — lớp, giao bài, lượt học và lịch ôn.
+4. `202607300003_secure_live.sql` — RPC bảo mật cho Live game.
+
+Ba file SQL cũ ở ngay `supabase/` chỉ còn để tham khảo lịch sử.
 
 ### Cấu hình Auth (QUAN TRỌNG)
 - **Authentication → Providers → Email → TẮT "Confirm email"** để đăng ký là đăng nhập ngay (nếu bật, mỗi lần đăng ký bị gửi email + dễ dính "email rate limit exceeded"). Hiện đã tắt.
@@ -141,11 +146,28 @@ scripts/              # convert_to_quiz.py/.mjs + README (chuyển tài liệu -
 
 ---
 
-## 7. Roadmap / ý tưởng còn lại (chưa làm)
+## 7. V1 mới trên nhánh phát triển
 
-- **Siết bảo mật multiplayer**: hiện `rooms/players/answers` để RLS công khai (demo). Khi cần: gắn host với tài khoản, giới hạn ai sửa phòng; dọn phòng cũ định kỳ.
-- **AI tích hợp (tuỳ chọn)**: thay vì copy-paste sang AI ngoài, gọi thẳng Claude/Anthropic API từ **route server Next.js** để tạo đề tự động (dùng structured output + batching để né giới hạn token). Cần **API key của chủ dự án** (tốn phí). Xem skill `claude-api`. *Chủ dự án hiện chọn "AI ngoài" cho khỏi tốn tiền.*
-- **Thêm loại câu hỏi**: Flashcard (học lật thẻ), Đúng/Sai, Điền chỗ trống, Ghép cặp, Sắp thứ tự, câu có hình ảnh.
+- Question model V2: nhiều đáp án, đúng/sai, trả lời ngắn, điền khuyết, lời giải, gợi ý, chủ đề, độ khó và trạng thái duyệt.
+- Đọc trực tiếp PDF/DOCX/CSV/TXT trên server với giới hạn dung lượng.
+- AI Import trực tiếp qua Responses API nếu có `OPENAI_API_KEY`; không có key vẫn giữ luồng AI ngoài.
+- Chế độ Học / Ôn / Thi, lịch sử trên thiết bị, chủ đề yếu và lịch ôn cách quãng.
+- Lớp học, mã tham gia và giao bài cơ bản cho tài khoản Supabase.
+- Live game dùng secret-bearing RPC, chấm điểm transaction phía database và không công khai answer key trước khi reveal.
+
+AI trực tiếp dùng hai biến server:
+
+```env
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-5.6-terra
+```
+
+## 8. Roadmap sau V1
+
+- Hoàn thiện UI ghép cặp, sắp thứ tự, tự luận chấm tay và câu có hình ảnh.
+- Đồng bộ lịch ôn/attempt local lên cloud khi học sinh đăng nhập.
+- Báo cáo lớp nâng cao và xuất CSV/PDF.
+- OCR ảnh/PDF scan trực tiếp bằng model thị giác.
 - **Trải nghiệm**: avatar tự chọn, lịch sử điểm người chơi, xuất kết quả phòng, chế độ thi tính giờ / thi thử.
 - **Đăng nhập Google (1 chạm)** cho giáo viên; chia sẻ đề giữa giáo viên.
 - **Nhập tài liệu nâng cao**: đọc trực tiếp `.docx`/`.xlsx`/`.pdf` trong trình duyệt (thêm lib) để khỏi phải dán text; cải thiện engine `ruleParser` cho nhiều mẫu hơn.
@@ -153,7 +175,7 @@ scripts/              # convert_to_quiz.py/.mjs + README (chuyển tài liệu -
 
 ---
 
-## 8. Lưu ý cho dev tiếp nhận (gotchas)
+## 9. Lưu ý cho dev tiếp nhận (gotchas)
 
 - **Build vs dev**: đừng build khi dev đang chạy (hỏng `.next`) — mục 2.
 - **Test tự động hoá trình duyệt**: click tổng hợp (automation) KHÔNG kích hoạt onClick của React 19 — khi cần verify bằng script, gọi thẳng handler qua `element[__reactProps$...].onClick(...)`. Thao tác tay của người dùng thì bình thường.
@@ -164,9 +186,9 @@ scripts/              # convert_to_quiz.py/.mjs + README (chuyển tài liệu -
 
 ---
 
-## 9. Tóm tắt "muốn deploy ngay thì làm gì"
+## 10. Tóm tắt "muốn deploy ngay thì làm gì"
 
 1. `npm install` → `npm run build` (phải pass).
-2. Có Supabase: chạy 3 file `supabase/*.sql`, tắt Confirm email, lấy URL + anon key.
-3. Vercel: import repo, thêm 2 env `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY`, Deploy.
+2. Có Supabase: chạy 4 file trong `supabase/migrations/`, tắt Confirm email, lấy URL + anon key.
+3. Vercel: thêm 2 env Supabase; thêm `OPENAI_API_KEY` và `OPENAI_MODEL` nếu bật AI trực tiếp.
 4. Xong: mở link, đăng ký GV, tạo/nhập đề, tạo phòng chơi thử.

@@ -80,7 +80,7 @@ create policy "class_member_read" on public.classes
   for select to authenticated using (
     exists (
       select 1 from public.class_members member
-      where member.class_id = id and member.user_id = auth.uid()
+      where member.class_id = classes.id and member.user_id = auth.uid()
     )
   );
 
@@ -88,16 +88,14 @@ create policy "member_self_read" on public.class_members
   for select to authenticated using (
     user_id = auth.uid() or exists (
       select 1 from public.classes class
-      where class.id = class_id and class.owner_id = auth.uid()
+      where class.id = class_members.class_id and class.owner_id = auth.uid()
     )
   );
-create policy "member_self_join" on public.class_members
-  for insert to authenticated with check (user_id = auth.uid());
 create policy "class_owner_manage_members" on public.class_members
   for delete to authenticated using (
     exists (
       select 1 from public.classes class
-      where class.id = class_id and class.owner_id = auth.uid()
+      where class.id = class_members.class_id and class.owner_id = auth.uid()
     )
   );
 
@@ -105,24 +103,53 @@ create policy "teacher_manage_assignments" on public.assignments
   for all to authenticated using (
     exists (
       select 1 from public.classes class
-      where class.id = class_id and class.owner_id = auth.uid()
+      where class.id = assignments.class_id and class.owner_id = auth.uid()
     )
   ) with check (
     exists (
       select 1 from public.classes class
-      where class.id = class_id and class.owner_id = auth.uid()
+      where class.id = assignments.class_id and class.owner_id = auth.uid()
     )
   );
 create policy "student_read_assignments" on public.assignments
   for select to authenticated using (
     exists (
       select 1 from public.class_members member
-      where member.class_id = class_id and member.user_id = auth.uid()
+      where member.class_id = assignments.class_id and member.user_id = auth.uid()
     )
   );
 
-create policy "attempt_owner_all" on public.attempts
-  for all to authenticated
+create policy "assigned_quiz_read" on public.quizzes
+  for select to authenticated using (
+    exists (
+      select 1
+      from public.assignments assignment
+      join public.class_members member
+        on member.class_id = assignment.class_id
+      where assignment.quiz_id = quizzes.id
+        and member.user_id = auth.uid()
+    )
+  );
+
+create policy "attempt_owner_read" on public.attempts
+  for select to authenticated using (user_id = auth.uid());
+create policy "attempt_owner_insert" on public.attempts
+  for insert to authenticated with check (
+    user_id = auth.uid()
+    and (
+      assignment_id is null
+      or exists (
+        select 1
+        from public.assignments assignment
+        join public.class_members member
+          on member.class_id = assignment.class_id
+        where assignment.id = attempts.assignment_id
+          and member.user_id = auth.uid()
+      )
+    )
+  );
+create policy "attempt_owner_update" on public.attempts
+  for update to authenticated
   using (user_id = auth.uid()) with check (user_id = auth.uid());
 create policy "teacher_read_attempts" on public.attempts
   for select to authenticated using (
@@ -130,19 +157,19 @@ create policy "teacher_read_attempts" on public.attempts
       select 1
       from public.assignments assignment
       join public.classes class on class.id = assignment.class_id
-      where assignment.id = assignment_id and class.owner_id = auth.uid()
+      where assignment.id = attempts.assignment_id and class.owner_id = auth.uid()
     )
   );
 create policy "attempt_answer_owner_all" on public.attempt_answers
   for all to authenticated using (
     exists (
       select 1 from public.attempts attempt
-      where attempt.id = attempt_id and attempt.user_id = auth.uid()
+      where attempt.id = attempt_answers.attempt_id and attempt.user_id = auth.uid()
     )
   ) with check (
     exists (
       select 1 from public.attempts attempt
-      where attempt.id = attempt_id and attempt.user_id = auth.uid()
+      where attempt.id = attempt_answers.attempt_id and attempt.user_id = auth.uid()
     )
   );
 create policy "teacher_read_attempt_answers" on public.attempt_answers
@@ -152,7 +179,7 @@ create policy "teacher_read_attempt_answers" on public.attempt_answers
       from public.attempts attempt
       join public.assignments assignment on assignment.id = attempt.assignment_id
       join public.classes class on class.id = assignment.class_id
-      where attempt.id = attempt_id and class.owner_id = auth.uid()
+      where attempt.id = attempt_answers.attempt_id and class.owner_id = auth.uid()
     )
   );
 create policy "review_owner_all" on public.review_cards
