@@ -50,13 +50,21 @@ export default function ImportText({
   const [error, setError] = useState<string | null>(null);
   const [working, setWorking] = useState<string | null>(null);
   const [fileInfo, setFileInfo] = useState<string | null>(null);
+  const [sourceFile, setSourceFile] = useState<File | null>(null);
   const [aiPreview, setAiPreview] = useState<Quiz | null>(null);
 
   const onFile = async (file: File | undefined) => {
     if (!file) return;
     setError(null);
+    setSourceFile(file);
+    setFileInfo(file.name);
     setWorking("Đang đọc tài liệu…");
     try {
+      if (file.type.startsWith("image/")) {
+        setRaw("");
+        setFileInfo(`${file.name} · ảnh sẽ được AI đọc trực tiếp`);
+        return;
+      }
       if (/\.(txt|csv|tsv|md)$/i.test(file.name)) {
         setRaw(await file.text());
       } else {
@@ -103,11 +111,24 @@ export default function ImportText({
           : "AI đang tạo câu hỏi…",
     );
     try {
-      const response = await fetch("/api/ai/quiz", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ source: raw, mode, count: 20 }),
-      });
+      const useFile =
+        sourceFile &&
+        (sourceFile.type.startsWith("image/") ||
+          (!raw.trim() && sourceFile.type === "application/pdf"));
+      let response: Response;
+      if (useFile) {
+        const form = new FormData();
+        form.set("file", sourceFile);
+        form.set("mode", mode);
+        form.set("count", "20");
+        response = await fetch("/api/ai/quiz-file", { method: "POST", body: form });
+      } else {
+        response = await fetch("/api/ai/quiz", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ source: raw, mode, count: 20 }),
+        });
+      }
       const result = (await response.json()) as Quiz & {
         error?: string;
         code?: string;
@@ -248,10 +269,10 @@ export default function ImportText({
         {fileInfo && <p className="text-xs text-emerald-100">✓ {fileInfo}</p>}
         <div className="flex flex-wrap items-center gap-2">
           <label className={`${GHOST} cursor-pointer px-4 py-2 text-sm`}>
-            📎 Tải PDF / Word / CSV / văn bản
+            📎 Tải PDF / Word / ảnh / CSV / văn bản
             <input
               type="file"
-              accept=".pdf,.docx,.txt,.csv,.md,.tsv"
+              accept=".pdf,.docx,.txt,.csv,.md,.tsv,.png,.jpg,.jpeg,.webp,.gif"
               className="hidden"
               onChange={(e) => onFile(e.target.files?.[0])}
             />
@@ -273,21 +294,21 @@ export default function ImportText({
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => importWithAi("extract")}
-              disabled={!raw.trim() || !!working}
+              disabled={(!raw.trim() && !sourceFile) || !!working}
               className={`${LIGHT} px-4 py-2 text-sm`}
             >
               Giữ nguyên bộ đề
             </button>
             <button
               onClick={() => importWithAi("generate")}
-              disabled={!raw.trim() || !!working}
+              disabled={(!raw.trim() && !sourceFile) || !!working}
               className={`${GHOST} px-4 py-2 text-sm`}
             >
               Tạo câu hỏi
             </button>
             <button
               onClick={() => importWithAi("outline")}
-              disabled={!raw.trim() || !!working}
+              disabled={(!raw.trim() && !sourceFile) || !!working}
               className={`${GHOST} px-4 py-2 text-sm`}
             >
               Tạo đề cương ôn

@@ -69,16 +69,50 @@ export async function createQuizWithAi(input: {
   count?: number;
   safetyIdentifier?: string;
 }): Promise<Quiz> {
+  return createQuizFromContent({
+    ...input,
+    userContent: `${buildTask(input.mode, input.count)}\n\nNGUỒN:\n${input.source.slice(0, 450_000)}`,
+  });
+}
+
+export async function createQuizFromFileWithAi(input: {
+  fileDataUrl: string;
+  filename: string;
+  mimeType: string;
+  mode: "extract" | "generate" | "outline";
+  count?: number;
+  safetyIdentifier?: string;
+}): Promise<Quiz> {
+  const media = input.mimeType === "application/pdf"
+    ? { type: "input_file" as const, filename: input.filename, file_data: input.fileDataUrl }
+    : { type: "input_image" as const, image_url: input.fileDataUrl, detail: "high" as const };
+  return createQuizFromContent({
+    ...input,
+    userContent: [
+      { type: "input_text" as const, text: `${buildTask(input.mode, input.count)}\nĐọc toàn bộ nội dung nhìn thấy trong tệp. Giữ nguyên tiếng Việt và tham chiếu trang/vùng khi có thể.` },
+      media,
+    ],
+  });
+}
+
+function buildTask(mode: "extract" | "generate" | "outline", requestedCount?: number) {
+  const count = Math.min(100, Math.max(1, requestedCount ?? 20));
+  return mode === "extract"
+    ? "Giữ nguyên các câu hỏi và đáp án có sẵn. Không tự bịa đáp án. Nếu bằng chứng đáp án yếu, đặt status=needs_review và confidence thấp."
+    : mode === "outline"
+      ? "Tạo bộ câu hỏi bao phủ các ý quan trọng như một đề cương ôn tập."
+      : `Tạo khoảng ${count} câu hỏi chất lượng từ tài liệu.`;
+}
+
+async function createQuizFromContent(input: {
+  userContent: string | Array<Record<string, unknown>>;
+  mode: "extract" | "generate" | "outline";
+  count?: number;
+  safetyIdentifier?: string;
+}): Promise<Quiz> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("Máy chủ chưa cấu hình OPENAI_API_KEY.");
   const model = process.env.OPENAI_MODEL || "gpt-5.6-terra";
-  const count = Math.min(100, Math.max(1, input.count ?? 20));
-  const task =
-    input.mode === "extract"
-      ? "Giữ nguyên các câu hỏi và đáp án có sẵn. Không tự bịa đáp án. Nếu bằng chứng đáp án yếu, đặt status=needs_review và confidence thấp."
-      : input.mode === "outline"
-        ? "Tạo bộ câu hỏi bao phủ các ý quan trọng như một đề cương ôn tập."
-        : `Tạo khoảng ${count} câu hỏi chất lượng từ tài liệu.`;
 
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
@@ -107,7 +141,7 @@ export async function createQuizWithAi(input: {
         },
         {
           role: "user",
-          content: `${task}\n\nNGUỒN:\n${input.source.slice(0, 450_000)}`,
+          content: input.userContent,
         },
       ],
     }),

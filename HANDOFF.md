@@ -149,7 +149,7 @@ scripts/              # convert_to_quiz.py/.mjs + README (chuyển tài liệu -
 ## 7. V1 mới trên nhánh phát triển
 
 - Question model V2: nhiều đáp án, đúng/sai, trả lời ngắn, điền khuyết, lời giải, gợi ý, chủ đề, độ khó và trạng thái duyệt.
-- Đọc trực tiếp PDF/DOCX/CSV/TXT trên server với giới hạn dung lượng.
+- Đọc trực tiếp PDF/DOCX/CSV/TXT trên server với giới hạn dung lượng; ảnh và PDF scan dùng AI thị giác.
 - AI Import trực tiếp qua Responses API nếu có `OPENAI_API_KEY`; không có key vẫn giữ luồng AI ngoài.
 - Chế độ Học / Ôn / Thi, lịch sử trên thiết bị, chủ đề yếu và lịch ôn cách quãng.
 - Lớp học, mã tham gia và giao bài cơ bản cho tài khoản Supabase.
@@ -167,7 +167,6 @@ OPENAI_MODEL=gpt-5.6-terra
 - Hoàn thiện UI ghép cặp, sắp thứ tự, tự luận chấm tay và câu có hình ảnh.
 - Đồng bộ lịch ôn/attempt local lên cloud khi học sinh đăng nhập.
 - Báo cáo lớp nâng cao và xuất CSV/PDF.
-- OCR ảnh/PDF scan trực tiếp bằng model thị giác.
 - **Trải nghiệm**: avatar tự chọn, lịch sử điểm người chơi, xuất kết quả phòng, chế độ thi tính giờ / thi thử.
 - **Đăng nhập Google (1 chạm)** cho giáo viên; chia sẻ đề giữa giáo viên.
 - **Nhập tài liệu nâng cao**: đọc trực tiếp `.docx`/`.xlsx`/`.pdf` trong trình duyệt (thêm lib) để khỏi phải dán text; cải thiện engine `ruleParser` cho nhiều mẫu hơn.
