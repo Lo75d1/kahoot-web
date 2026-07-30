@@ -21,6 +21,7 @@ import PlayerGame from "./multiplayer/PlayerGame";
 import AiCreator from "./AiCreator";
 import AuthScreen from "./AuthScreen";
 import ImportText from "./ImportText";
+import { saveAttempt, type LearningMode } from "@/lib/learning";
 
 type Mode =
   | "bank"
@@ -46,6 +47,7 @@ export default function QuizApp() {
   const [playQuiz, setPlayQuiz] = useState<Quiz | null>(null);
   const [hostQuiz, setHostQuiz] = useState<Quiz | null>(null);
   const [shuffleOn, setShuffleOn] = useState(false);
+  const [playMode, setPlayMode] = useState<LearningMode>("practice");
   const [toast, setToast] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
@@ -131,7 +133,16 @@ export default function QuizApp() {
   };
 
   if (mode === "play" && playQuiz) {
-    return <Player quiz={playQuiz} onExit={() => setMode("bank")} />;
+    return (
+      <Player
+        quiz={playQuiz}
+        mode={playMode}
+        onComplete={(results, score) => {
+          saveAttempt(playQuiz, playMode, results, score);
+        }}
+        onExit={() => setMode("bank")}
+      />
+    );
   }
 
   if (mode === "host" && hostQuiz) {
@@ -244,6 +255,33 @@ export default function QuizApp() {
       >
         🔀 Trộn câu hỏi khi chơi: {shuffleOn ? "BẬT" : "TẮT"}
       </button>
+
+      <div className={`rounded-2xl p-3 ${GLASS}`}>
+        <p className="mb-2 text-xs font-bold uppercase tracking-wide text-white/60">
+          Cách sử dụng bộ đề
+        </p>
+        <div className="grid grid-cols-3 gap-2">
+          {(
+            [
+              ["learn", "📖 Học"],
+              ["practice", "🧠 Ôn"],
+              ["exam", "📝 Thi"],
+            ] as [LearningMode, string][]
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              onClick={() => setPlayMode(value)}
+              className={`rounded-xl border px-3 py-2 text-sm font-bold transition ${
+                playMode === value
+                  ? "border-amber-200/60 bg-amber-300/25 text-amber-50"
+                  : "border-white/20 bg-white/5 text-white/75 hover:bg-white/10"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {loading ? (
         <p className="py-10 text-center text-white/70">Đang tải…</p>

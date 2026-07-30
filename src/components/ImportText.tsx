@@ -48,12 +48,82 @@ export default function ImportText({
   const [rulesRaw, setRulesRaw] = useState("");
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [working, setWorking] = useState<string | null>(null);
+  const [fileInfo, setFileInfo] = useState<string | null>(null);
 
   const onFile = async (file: File | undefined) => {
     if (!file) return;
     setError(null);
-    setRaw(await file.text());
-    if (file.name.toLowerCase().endsWith(".csv")) setFmt("csv");
+    setWorking("Đang đọc tài liệu…");
+    try {
+      if (/\.(txt|csv|tsv|md)$/i.test(file.name)) {
+        setRaw(await file.text());
+      } else {
+        const form = new FormData();
+        form.set("file", file);
+        const response = await fetch("/api/documents/extract", {
+          method: "POST",
+          body: form,
+        });
+        const result = (await response.json()) as {
+          text?: string;
+          kind?: string;
+          pages?: number;
+          truncated?: boolean;
+          error?: string;
+        };
+        if (!response.ok || !result.text) {
+          throw new Error(result.error || "Không đọc được tài liệu.");
+        }
+        setRaw(result.text);
+        setFileInfo(
+          `${file.name}${result.pages ? ` · ${result.pages} trang` : ""}${
+            result.truncated ? " · đã giới hạn nội dung dài" : ""
+          }`,
+        );
+      }
+      if (file.name.toLowerCase().endsWith(".csv")) setFmt("csv");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Không đọc được tài liệu.");
+    } finally {
+      setWorking(null);
+    }
+  };
+
+  const importWithAi = async (
+    mode: "extract" | "generate" | "outline",
+  ) => {
+    setError(null);
+    setWorking(
+      mode === "extract"
+        ? "AI đang nhận diện bộ đề…"
+        : mode === "outline"
+          ? "AI đang tạo đề cương…"
+          : "AI đang tạo câu hỏi…",
+    );
+    try {
+      const response = await fetch("/api/ai/quiz", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: raw, mode, count: 20 }),
+      });
+      const result = (await response.json()) as Quiz & {
+        error?: string;
+        code?: string;
+      };
+      if (!response.ok) {
+        throw new Error(
+          result.code === "AI_NOT_CONFIGURED"
+            ? "AI trực tiếp chưa được bật trên máy chủ. Bạn vẫn có thể dùng “Theo quy tắc (AI)” hoặc AI ngoài miễn phí."
+            : result.error || "AI không xử lý được tài liệu.",
+        );
+      }
+      onSave(result);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "AI không xử lý được tài liệu.");
+    } finally {
+      setWorking(null);
+    }
   };
 
   const copyPrompt = async () => {
@@ -174,12 +244,13 @@ export default function ImportText({
           placeholder="Dán nội dung tài liệu vào đây…"
           className={`${INPUT} h-52 font-mono text-xs`}
         />
+        {fileInfo && <p className="text-xs text-emerald-100">✓ {fileInfo}</p>}
         <div className="flex flex-wrap items-center gap-2">
           <label className={`${GHOST} cursor-pointer px-4 py-2 text-sm`}>
-            📎 Tải file (.txt / .csv)
+            📎 Tải PDF / Word / Excel / văn bản
             <input
               type="file"
-              accept=".txt,.csv,.md,.tsv"
+              accept=".pdf,.docx,.xlsx,.xls,.txt,.csv,.md,.tsv"
               className="hidden"
               onChange={(e) => onFile(e.target.files?.[0])}
             />
@@ -194,6 +265,38 @@ export default function ImportText({
           )}
         </div>
 
+        <div className="rounded-2xl border border-amber-200/25 bg-amber-300/10 p-3">
+          <p className="mb-2 text-sm font-bold text-amber-100">
+            ✨ Xử lý tự động bằng AI trên Kashot
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => importWithAi("extract")}
+              disabled={!raw.trim() || !!working}
+              className={`${LIGHT} px-4 py-2 text-sm`}
+            >
+              Giữ nguyên bộ đề
+            </button>
+            <button
+              onClick={() => importWithAi("generate")}
+              disabled={!raw.trim() || !!working}
+              className={`${GHOST} px-4 py-2 text-sm`}
+            >
+              Tạo câu hỏi
+            </button>
+            <button
+              onClick={() => importWithAi("outline")}
+              disabled={!raw.trim() || !!working}
+              className={`${GHOST} px-4 py-2 text-sm`}
+            >
+              Tạo đề cương ôn
+            </button>
+          </div>
+          <p className="mt-2 text-xs text-white/60">
+            Câu AI chưa chắc đáp án sẽ được đánh dấu “Cần kiểm tra”.
+          </p>
+        </div>
+
         <button
           onClick={doImport}
           disabled={!raw.trim() || (fmt === "rules" && !rulesRaw.trim())}
@@ -201,6 +304,12 @@ export default function ImportText({
         >
           ✓ Chuyển thành bộ đề &amp; nhập
         </button>
+
+        {working && (
+          <p className="rounded-2xl border border-sky-200/30 bg-sky-400/20 px-4 py-3 text-sm font-semibold text-sky-50">
+            ⏳ {working}
+          </p>
+        )}
 
         {error && (
           <p className="rounded-2xl border border-rose-200/40 bg-rose-500/80 px-4 py-3 text-sm font-semibold text-white backdrop-blur-md">

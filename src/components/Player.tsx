@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Quiz, RoundResult } from "@/lib/types";
 import { computeScore, streakBonus } from "@/lib/scoring";
 import { sfx } from "@/lib/sound";
+import type { LearningMode } from "@/lib/learning";
 
 type Phase = "answering" | "revealed";
 
@@ -22,9 +23,13 @@ const CHIP =
 export default function Player({
   quiz,
   onExit,
+  mode = "practice",
+  onComplete,
 }: {
   quiz: Quiz;
   onExit: () => void;
+  mode?: LearningMode;
+  onComplete?: (results: RoundResult[], score: number) => void;
 }) {
   const [done, setDone] = useState(false);
   const [index, setIndex] = useState(0);
@@ -38,6 +43,8 @@ export default function Player({
   const [streak, setStreak] = useState(0);
   const [lastEarned, setLastEarned] = useState(0);
   const [results, setResults] = useState<RoundResult[]>([]);
+  const [hintVisible, setHintVisible] = useState(false);
+  const completionSentRef = useRef(false);
 
   const questionStartRef = useRef(0);
   const answeredRef = useRef(false);
@@ -109,6 +116,7 @@ export default function Player({
   }, [done, phase, index, question, reveal]);
 
   const restart = () => {
+    completionSentRef.current = false;
     setDone(false);
     setIndex(0);
     setPhase("answering");
@@ -118,17 +126,23 @@ export default function Player({
     setStreak(0);
     setLastEarned(0);
     setResults([]);
+    setHintVisible(false);
     setTimeLeftMs(quiz.questions[0]?.timeLimit * 1000 || 0);
   };
 
   const next = () => {
     if (index + 1 >= quiz.questions.length) {
+      if (!completionSentRef.current) {
+        completionSentRef.current = true;
+        onComplete?.(results, score);
+      }
       setDone(true);
     } else {
       const nextIndex = index + 1;
       setIndex(nextIndex);
       setSelected(null);
       setSelectedMany([]);
+      setHintVisible(false);
       setPhase("answering");
       setTimeLeftMs(quiz.questions[nextIndex].timeLimit * 1000);
     }
@@ -162,6 +176,11 @@ export default function Player({
           <p className="mt-3 text-white/90">
             Đúng {correctCount}/{total} câu ({pct}%)
           </p>
+          {results.length > 0 && (
+            <p className="mt-2 text-xs text-white/60">
+              Chế độ: {mode === "learn" ? "Học" : mode === "exam" ? "Thi" : "Luyện tập"}
+            </p>
+          )}
         </div>
         <div className={`w-full overflow-hidden rounded-3xl ${GLASS}`}>
           {results.map((r, i) => (
@@ -230,6 +249,22 @@ export default function Player({
         </h2>
       </div>
 
+      {mode === "learn" && question.hint && phase === "answering" && (
+        <div className="text-center">
+          <button
+            onClick={() => setHintVisible((visible) => !visible)}
+            className="rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white/85"
+          >
+            {hintVisible ? "Ẩn gợi ý" : "💡 Xem gợi ý"}
+          </button>
+          {hintVisible && (
+            <p className="mt-2 rounded-2xl border border-amber-200/25 bg-amber-300/15 p-3 text-sm text-amber-50">
+              {question.hint}
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="flex items-center gap-3">
         <div
           className={`grid h-12 w-12 shrink-0 place-items-center rounded-full border text-lg font-black text-white backdrop-blur-md transition ${
@@ -251,11 +286,12 @@ export default function Player({
       <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
         {question.answers.map((ans, i) => {
           const revealed = phase === "revealed";
+          const showAnswer = revealed && mode !== "exam";
           const isCorrect = ans.correct;
           const isPicked = selected === i || selectedMany.includes(i);
 
           let stateClass = `${TILE_TINT[i % TILE_TINT.length]} border-white/30 hover:-translate-y-0.5 hover:bg-white/25`;
-          if (revealed) {
+          if (showAnswer) {
             if (isCorrect)
               stateClass =
                 "border-emerald-200/70 bg-emerald-400/30 ring-2 ring-emerald-200/60";
@@ -295,8 +331,8 @@ export default function Player({
                   : LETTERS[i] ?? i + 1}
               </span>
               <span className="flex-1">{ans.text}</span>
-              {revealed && isCorrect && <span className="text-2xl">✓</span>}
-              {revealed && isPicked && !isCorrect && (
+              {showAnswer && isCorrect && <span className="text-2xl">✓</span>}
+              {showAnswer && isPicked && !isCorrect && (
                 <span className="text-2xl">✕</span>
               )}
             </button>
@@ -318,7 +354,9 @@ export default function Player({
         <div
           className={`flex flex-col items-center gap-3 rounded-3xl p-4 text-center text-white ${GLASS}`}
         >
-          {selected === null && selectedMany.length === 0 ? (
+          {mode === "exam" ? (
+            <p className="text-xl font-bold text-sky-100">✓ Đã ghi nhận đáp án</p>
+          ) : selected === null && selectedMany.length === 0 ? (
             <p className="text-xl font-bold">⏰ Hết giờ! +0 điểm</p>
           ) : lastCorrect ? (
             <p className="text-xl font-bold text-emerald-200">
@@ -326,6 +364,11 @@ export default function Player({
             </p>
           ) : (
             <p className="text-xl font-bold text-rose-200">Sai rồi! +0 điểm</p>
+          )}
+          {mode !== "exam" && question.explanation && (
+            <p className="max-w-2xl rounded-2xl border border-white/15 bg-black/10 px-4 py-3 text-sm leading-relaxed text-white/85">
+              <b>Lời giải:</b> {question.explanation}
+            </p>
           )}
           <button
             onClick={next}
