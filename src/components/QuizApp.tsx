@@ -107,6 +107,8 @@ export default function QuizApp() {
       title: `${q.title} (bản sao)`,
       description: q.description,
       questions: q.questions,
+      version: q.version,
+      tags: q.tags,
     });
     await refresh();
     flash("Đã nhân bản đề ✓");
@@ -276,6 +278,26 @@ export default function QuizApp() {
                   {q.questions.length} câu hỏi ·{" "}
                   {formatDuration(totalSeconds(q))}
                 </p>
+                {(q.tags.length > 0 ||
+                  q.questions.some((question) => question.status === "needs_review")) && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {q.tags.slice(0, 4).map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-xs text-white/75"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                    {q.questions.some(
+                      (question) => question.status === "needs_review",
+                    ) && (
+                      <span className="rounded-full border border-amber-200/40 bg-amber-300/20 px-2 py-0.5 text-xs font-semibold text-amber-100">
+                        ⚠ Cần kiểm tra
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Hàng nút chính */}

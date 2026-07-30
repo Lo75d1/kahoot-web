@@ -1,7 +1,15 @@
 // Parser + kiểm tra hợp lệ: bóc JSON thô -> Quiz chuẩn hóa.
 // Ném QuizParseError với thông báo tiếng Việt rõ ràng khi dữ liệu sai.
 
-import type { Quiz, Question, Answer } from "./types";
+import type {
+  Quiz,
+  Question,
+  Answer,
+  QuestionDifficulty,
+  QuestionOrigin,
+  QuestionType,
+  ReviewStatus,
+} from "./types";
 
 export class QuizParseError extends Error {
   constructor(message: string) {
@@ -11,7 +19,17 @@ export class QuizParseError extends Error {
 }
 
 const MAX_TIME_LIMIT = 120; // giây
-const MAX_ANSWERS = 4;
+const MAX_ANSWERS = 8;
+const QUESTION_TYPES = new Set<QuestionType>([
+  "single_choice",
+  "multiple_choice",
+  "true_false",
+  "short_answer",
+  "fill_blank",
+  "matching",
+  "ordering",
+  "essay",
+]);
 
 /** Nhận vào object đã parse hoặc chuỗi JSON, trả về Quiz đã chuẩn hóa. */
 export function parseQuiz(input: unknown): Quiz {
@@ -46,7 +64,13 @@ export function parseQuiz(input: unknown): Quiz {
     parseQuestion(q, i),
   );
 
-  return { title, description, questions };
+  const version =
+    typeof obj.version === "number" && Number.isFinite(obj.version)
+      ? Math.max(1, Math.round(obj.version))
+      : 1;
+  const tags = parseStringArray(obj.tags);
+
+  return { title, description, questions, version, tags };
 }
 
 function parseQuestion(raw: unknown, index: number): Question {
@@ -55,6 +79,9 @@ function parseQuestion(raw: unknown, index: number): Question {
     throw new QuizParseError(`${where}: sai định dạng (không phải object).`);
   }
   const q = raw as Record<string, unknown>;
+  const type = QUESTION_TYPES.has(q.type as QuestionType)
+    ? (q.type as QuestionType)
+    : "single_choice";
 
   const text = typeof q.text === "string" ? q.text.trim() : "";
   if (!text) {
@@ -64,7 +91,8 @@ function parseQuestion(raw: unknown, index: number): Question {
   if (!Array.isArray(q.answers)) {
     throw new QuizParseError(`${where}: thiếu mảng "answers".`);
   }
-  if (q.answers.length < 2) {
+  const minAnswers = type === "essay" ? 0 : type === "short_answer" || type === "fill_blank" ? 1 : 2;
+  if (q.answers.length < minAnswers) {
     throw new QuizParseError(`${where}: cần ít nhất 2 đáp án.`);
   }
   if (q.answers.length > MAX_ANSWERS) {
@@ -73,8 +101,14 @@ function parseQuestion(raw: unknown, index: number): Question {
 
   const answers: Answer[] = q.answers.map((a, j) => parseAnswer(a, index, j));
 
-  if (!answers.some((a) => a.correct)) {
+  if (type !== "essay" && !answers.some((a) => a.correct)) {
     throw new QuizParseError(`${where}: phải có ít nhất 1 đáp án đúng.`);
+  }
+  if (
+    (type === "single_choice" || type === "true_false") &&
+    answers.filter((a) => a.correct).length !== 1
+  ) {
+    throw new QuizParseError(`${where}: dạng này phải có đúng 1 đáp án đúng.`);
   }
 
   const timeLimit =
@@ -86,7 +120,34 @@ function parseQuestion(raw: unknown, index: number): Question {
       ? Math.round(q.points)
       : 1000;
 
-  return { text, timeLimit, points, answers };
+  const difficulty: QuestionDifficulty =
+    q.difficulty === "easy" || q.difficulty === "hard" ? q.difficulty : "medium";
+  const status: ReviewStatus =
+    q.status === "needs_review" || q.status === "approved" || q.status === "archived"
+      ? q.status
+      : "draft";
+  const origin: QuestionOrigin =
+    q.origin === "imported" || q.origin === "ai_generated" ? q.origin : "manual";
+  const confidence =
+    typeof q.confidence === "number" && Number.isFinite(q.confidence)
+      ? Math.min(1, Math.max(0, q.confidence))
+      : undefined;
+
+  return {
+    type,
+    text,
+    timeLimit,
+    points,
+    answers,
+    explanation: typeof q.explanation === "string" ? q.explanation.trim() : "",
+    hint: typeof q.hint === "string" ? q.hint.trim() : "",
+    difficulty,
+    topics: parseStringArray(q.topics),
+    status,
+    origin,
+    confidence,
+    sourceRefs: parseStringArray(q.sourceRefs),
+  };
 }
 
 function parseAnswer(raw: unknown, qIndex: number, aIndex: number): Answer {
@@ -104,4 +165,16 @@ function parseAnswer(raw: unknown, qIndex: number, aIndex: number): Answer {
   const text = typeof a.text === "string" ? a.text.trim() : "";
   if (!text) throw new QuizParseError(`${where}: thiếu nội dung "text".`);
   return { text, correct: Boolean(a.correct) };
+}
+
+function parseStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return [
+    ...new Set(
+      value
+        .filter((item): item is string => typeof item === "string")
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  ];
 }

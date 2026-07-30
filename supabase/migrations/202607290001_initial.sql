@@ -7,6 +7,8 @@ create table if not exists public.quizzes (
   title text not null,
   description text not null default '',
   questions jsonb not null default '[]'::jsonb,
+  version integer not null default 1 check (version >= 1),
+  tags text[] not null default '{}',
   updated_at timestamptz not null default now()
 );
 

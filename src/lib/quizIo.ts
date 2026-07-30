@@ -7,12 +7,9 @@ export function toExportJson(quiz: Quiz): string {
   const clean = {
     title: quiz.title,
     description: quiz.description,
-    questions: quiz.questions.map((q) => ({
-      text: q.text,
-      timeLimit: q.timeLimit,
-      points: q.points,
-      answers: q.answers.map((a) => ({ text: a.text, correct: a.correct })),
-    })),
+    version: quiz.version,
+    tags: quiz.tags,
+    questions: quiz.questions,
   };
   return JSON.stringify(clean, null, 2);
 }

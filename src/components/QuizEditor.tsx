@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import type { Quiz } from "@/lib/types";
+import type {
+  QuestionDifficulty,
+  QuestionType,
+  Quiz,
+  ReviewStatus,
+} from "@/lib/types";
 import type { SavedQuiz } from "@/lib/store";
 import { parseQuiz, QuizParseError } from "@/lib/parser";
 
@@ -10,10 +15,16 @@ interface DraftAnswer {
   correct: boolean;
 }
 interface DraftQuestion {
+  type: QuestionType;
   text: string;
   timeLimit: string;
   points: string;
   answers: DraftAnswer[];
+  explanation: string;
+  hint: string;
+  difficulty: QuestionDifficulty;
+  topics: string;
+  status: ReviewStatus;
 }
 
 const GLASS =
@@ -27,6 +38,7 @@ const BTN_GHOST =
 
 function blankQuestion(): DraftQuestion {
   return {
+    type: "single_choice",
     text: "",
     timeLimit: "20",
     points: "1000",
@@ -36,6 +48,11 @@ function blankQuestion(): DraftQuestion {
       { text: "", correct: false },
       { text: "", correct: false },
     ],
+    explanation: "",
+    hint: "",
+    difficulty: "medium",
+    topics: "",
+    status: "draft",
   };
 }
 
@@ -49,9 +66,15 @@ function toDraft(quiz: SavedQuiz): {
     description: quiz.description,
     questions: quiz.questions.map((q) => ({
       text: q.text,
+      type: q.type,
       timeLimit: String(q.timeLimit),
       points: String(q.points),
       answers: q.answers.map((a) => ({ text: a.text, correct: a.correct })),
+      explanation: q.explanation,
+      hint: q.hint,
+      difficulty: q.difficulty,
+      topics: q.topics.join(", "),
+      status: q.status,
     })),
   };
 }
@@ -71,6 +94,7 @@ export default function QuizEditor({
 
   const [title, setTitle] = useState(seed.title);
   const [description, setDescription] = useState(seed.description);
+  const [tags, setTags] = useState(initial?.tags.join(", ") ?? "");
   const [questions, setQuestions] = useState<DraftQuestion[]>(seed.questions);
   const [error, setError] = useState<string | null>(null);
   const [showImport, setShowImport] = useState(false);
@@ -99,10 +123,36 @@ export default function QuizEditor({
         i === qi
           ? {
               ...q,
-              answers: q.answers.map((a, j) => ({ ...a, correct: j === ai })),
+              answers: q.answers.map((a, j) => ({
+                ...a,
+                correct:
+                  q.type === "multiple_choice"
+                    ? j === ai
+                      ? !a.correct
+                      : a.correct
+                    : j === ai,
+              })),
             }
           : q,
       ),
+    );
+
+  const setQuestionType = (qi: number, type: QuestionType) =>
+    setQuestions((qs) =>
+      qs.map((q, i) => {
+        if (i !== qi) return q;
+        if (type === "true_false") {
+          return {
+            ...q,
+            type,
+            answers: [
+              { text: "Đúng", correct: true },
+              { text: "Sai", correct: false },
+            ],
+          };
+        }
+        return { ...q, type };
+      }),
     );
 
   const addAnswer = (qi: number) =>
@@ -146,9 +196,15 @@ export default function QuizEditor({
       setQuestions(
         q.questions.map((qq) => ({
           text: qq.text,
+          type: qq.type,
           timeLimit: String(qq.timeLimit),
           points: String(qq.points),
           answers: qq.answers.map((a) => ({ text: a.text, correct: a.correct })),
+          explanation: qq.explanation,
+          hint: qq.hint,
+          difficulty: qq.difficulty,
+          topics: qq.topics.join(", "),
+          status: qq.status,
         })),
       );
       setShowImport(false);
@@ -167,13 +223,22 @@ export default function QuizEditor({
     const raw = {
       title: title.trim() || "Bộ đề không tên",
       description: description.trim(),
+      version: initial?.version ?? 1,
+      tags: tags.split(",").map((tag) => tag.trim()).filter(Boolean),
       questions: questions.map((q) => ({
+        type: q.type,
         text: q.text.trim(),
         timeLimit: Number(q.timeLimit) || 20,
         points: Number(q.points) || 1000,
         answers: q.answers
           .filter((a) => a.text.trim())
           .map((a) => ({ text: a.text.trim(), correct: a.correct })),
+        explanation: q.explanation.trim(),
+        hint: q.hint.trim(),
+        difficulty: q.difficulty,
+        topics: q.topics.split(",").map((topic) => topic.trim()).filter(Boolean),
+        status: q.status,
+        origin: "manual",
       })),
     };
     try {
@@ -215,6 +280,15 @@ export default function QuizEditor({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Mô tả ngắn"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm font-semibold">
+          Nhãn bộ đề (phân cách bằng dấu phẩy)
+          <input
+            className={INPUT}
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            placeholder="Toán 8, học kỳ 1, đại số"
           />
         </label>
         <button
@@ -281,6 +355,53 @@ export default function QuizEditor({
             placeholder="Nội dung câu hỏi?"
           />
 
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <label className="flex flex-col gap-1 text-xs font-semibold">
+              Dạng câu
+              <select
+                className={INPUT}
+                value={q.type}
+                onChange={(e) =>
+                  setQuestionType(qi, e.target.value as QuestionType)
+                }
+              >
+                <option value="single_choice">Một đáp án</option>
+                <option value="multiple_choice">Nhiều đáp án</option>
+                <option value="true_false">Đúng / Sai</option>
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 text-xs font-semibold">
+              Độ khó
+              <select
+                className={INPUT}
+                value={q.difficulty}
+                onChange={(e) =>
+                  patchQuestion(qi, {
+                    difficulty: e.target.value as QuestionDifficulty,
+                  })
+                }
+              >
+                <option value="easy">Dễ</option>
+                <option value="medium">Trung bình</option>
+                <option value="hard">Khó</option>
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 text-xs font-semibold">
+              Trạng thái
+              <select
+                className={INPUT}
+                value={q.status}
+                onChange={(e) =>
+                  patchQuestion(qi, { status: e.target.value as ReviewStatus })
+                }
+              >
+                <option value="draft">Bản nháp</option>
+                <option value="needs_review">Cần kiểm tra</option>
+                <option value="approved">Đã duyệt</option>
+              </select>
+            </label>
+          </div>
+
           <div className="flex gap-3">
             <label className="flex flex-1 flex-col gap-1 text-xs font-semibold">
               Thời gian (giây)
@@ -308,12 +429,12 @@ export default function QuizEditor({
 
           <div className="flex flex-col gap-2">
             <span className="text-xs font-semibold text-white/80">
-              Đáp án (chọn ⦿ cho đáp án đúng)
+              Đáp án ({q.type === "multiple_choice" ? "có thể chọn nhiều" : "chọn một đáp án đúng"})
             </span>
             {q.answers.map((a, ai) => (
               <div key={ai} className="flex items-center gap-2">
                 <input
-                  type="radio"
+                  type={q.type === "multiple_choice" ? "checkbox" : "radio"}
                   name={`correct-${qi}`}
                   checked={a.correct}
                   onChange={() => setCorrect(qi, ai)}
@@ -345,6 +466,34 @@ export default function QuizEditor({
               </button>
             )}
           </div>
+
+          <label className="flex flex-col gap-1 text-xs font-semibold">
+            Chủ đề (phân cách bằng dấu phẩy)
+            <input
+              className={INPUT}
+              value={q.topics}
+              onChange={(e) => patchQuestion(qi, { topics: e.target.value })}
+              placeholder="Phương trình, biến đổi đại số"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-xs font-semibold">
+            Gợi ý
+            <input
+              className={INPUT}
+              value={q.hint}
+              onChange={(e) => patchQuestion(qi, { hint: e.target.value })}
+              placeholder="Hiện khi học sinh cần trợ giúp"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-xs font-semibold">
+            Lời giải
+            <textarea
+              className={`${INPUT} min-h-20`}
+              value={q.explanation}
+              onChange={(e) => patchQuestion(qi, { explanation: e.target.value })}
+              placeholder="Giải thích vì sao đáp án đúng"
+            />
+          </label>
         </div>
       ))}
 

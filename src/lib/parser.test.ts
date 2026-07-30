@@ -41,4 +41,34 @@ describe("parseQuiz", () => {
       }),
     ).toThrow(QuizParseError);
   });
+
+  it("upgrades legacy questions and preserves learning metadata", () => {
+    const quiz = parseQuiz({
+      tags: [" Toán ", "Toán"],
+      questions: [
+        {
+          text: "Chọn các số chẵn",
+          type: "multiple_choice",
+          answers: [
+            { text: "2", correct: true },
+            { text: "3", correct: false },
+            { text: "4", correct: true },
+          ],
+          explanation: "Số chẵn chia hết cho 2.",
+          difficulty: "easy",
+          topics: ["Số học"],
+          status: "approved",
+        },
+      ],
+    });
+
+    expect(quiz.tags).toEqual(["Toán"]);
+    expect(quiz.questions[0]).toMatchObject({
+      type: "multiple_choice",
+      explanation: "Số chẵn chia hết cho 2.",
+      difficulty: "easy",
+      topics: ["Số học"],
+      status: "approved",
+    });
+  });
 });

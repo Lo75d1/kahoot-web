@@ -26,7 +26,11 @@ function readAll(): SavedQuiz[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as SavedQuiz[]) : [];
+    if (!raw) return [];
+    return (JSON.parse(raw) as SavedQuiz[]).map((saved) => ({
+      ...saved,
+      ...parseQuiz(saved),
+    }));
   } catch {
     return [];
   }
@@ -55,6 +59,8 @@ export const localStore: QuizStore = {
       title: quiz.title,
       description: quiz.description,
       questions: quiz.questions,
+      version: quiz.version,
+      tags: quiz.tags,
       updatedAt: Date.now(),
     };
     const idx = all.findIndex((q) => q.id === id);

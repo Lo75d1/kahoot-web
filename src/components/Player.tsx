@@ -30,6 +30,7 @@ export default function Player({
   const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>("answering");
   const [selected, setSelected] = useState<number | null>(null);
+  const [selectedMany, setSelectedMany] = useState<number[]>([]);
   const [timeLeftMs, setTimeLeftMs] = useState(
     () => quiz.questions[0]?.timeLimit * 1000 || 0,
   );
@@ -52,14 +53,21 @@ export default function Player({
   };
 
   const reveal = useCallback(
-    (choice: number | null) => {
+    (choice: number | number[] | null) => {
       if (answeredRef.current || !question) return;
       answeredRef.current = true;
       clearTimer();
 
       const responseMs =
         choice === null ? null : Date.now() - questionStartRef.current;
-      const correct = choice !== null && !!question.answers[choice]?.correct;
+      const picked = Array.isArray(choice) ? choice : choice === null ? [] : [choice];
+      const expected = question.answers
+        .map((answer, answerIndex) => (answer.correct ? answerIndex : -1))
+        .filter((answerIndex) => answerIndex >= 0);
+      const correct =
+        picked.length > 0 &&
+        picked.length === expected.length &&
+        picked.every((answerIndex) => expected.includes(answerIndex));
 
       const newStreak = correct ? streak + 1 : 0;
       const base = correct
@@ -68,7 +76,8 @@ export default function Player({
       const bonus = correct ? streakBonus(newStreak) : 0;
       const earned = base + bonus;
 
-      setSelected(choice);
+      setSelected(typeof choice === "number" ? choice : null);
+      setSelectedMany(picked);
       setLastEarned(earned);
       setScore((s) => s + earned);
       setStreak(newStreak);
@@ -104,6 +113,7 @@ export default function Player({
     setIndex(0);
     setPhase("answering");
     setSelected(null);
+    setSelectedMany([]);
     setScore(0);
     setStreak(0);
     setLastEarned(0);
@@ -118,6 +128,7 @@ export default function Player({
       const nextIndex = index + 1;
       setIndex(nextIndex);
       setSelected(null);
+      setSelectedMany([]);
       setPhase("answering");
       setTimeLeftMs(quiz.questions[nextIndex].timeLimit * 1000);
     }
@@ -241,7 +252,7 @@ export default function Player({
         {question.answers.map((ans, i) => {
           const revealed = phase === "revealed";
           const isCorrect = ans.correct;
-          const isPicked = selected === i;
+          const isPicked = selected === i || selectedMany.includes(i);
 
           let stateClass = `${TILE_TINT[i % TILE_TINT.length]} border-white/30 hover:-translate-y-0.5 hover:bg-white/25`;
           if (revealed) {
@@ -257,13 +268,31 @@ export default function Player({
             <button
               key={i}
               disabled={revealed}
-              onClick={() => reveal(i)}
+              onClick={() => {
+                if (question.type === "multiple_choice") {
+                  setSelectedMany((current) =>
+                    current.includes(i)
+                      ? current.filter((answerIndex) => answerIndex !== i)
+                      : [...current, i],
+                  );
+                } else {
+                  reveal(i);
+                }
+              }}
               className={`flex items-center gap-4 rounded-[1.75rem] border px-5 py-6 text-left text-xl font-semibold text-white shadow-lg backdrop-blur-md transition duration-200 ${stateClass} ${
                 revealed ? "cursor-default" : "cursor-pointer active:scale-[0.98]"
               }`}
             >
-              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white/40 bg-white/25 text-lg font-black">
-                {LETTERS[i] ?? i + 1}
+              <span
+                className={`grid h-11 w-11 shrink-0 place-items-center rounded-full border text-lg font-black ${
+                  isPicked
+                    ? "border-amber-100 bg-amber-300 text-emerald-950"
+                    : "border-white/40 bg-white/25"
+                }`}
+              >
+                {question.type === "multiple_choice" && isPicked
+                  ? "✓"
+                  : LETTERS[i] ?? i + 1}
               </span>
               <span className="flex-1">{ans.text}</span>
               {revealed && isCorrect && <span className="text-2xl">✓</span>}
@@ -275,11 +304,21 @@ export default function Player({
         })}
       </div>
 
+      {phase === "answering" && question.type === "multiple_choice" && (
+        <button
+          onClick={() => reveal(selectedMany)}
+          disabled={selectedMany.length === 0}
+          className="self-center rounded-full border border-amber-100/60 bg-amber-300 px-8 py-3 font-extrabold text-emerald-950 shadow-lg transition hover:bg-amber-200 disabled:opacity-40"
+        >
+          Chốt {selectedMany.length} đáp án
+        </button>
+      )}
+
       {phase === "revealed" && (
         <div
           className={`flex flex-col items-center gap-3 rounded-3xl p-4 text-center text-white ${GLASS}`}
         >
-          {selected === null ? (
+          {selected === null && selectedMany.length === 0 ? (
             <p className="text-xl font-bold">⏰ Hết giờ! +0 điểm</p>
           ) : lastCorrect ? (
             <p className="text-xl font-bold text-emerald-200">

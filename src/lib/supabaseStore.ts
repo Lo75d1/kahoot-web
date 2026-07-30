@@ -4,6 +4,7 @@
 import type { Quiz } from "./types";
 import type { QuizStore, SavedQuiz } from "./store";
 import { supabase } from "./supabase";
+import { parseQuiz } from "./parser";
 
 const TABLE = "quizzes";
 
@@ -12,15 +13,22 @@ interface Row {
   title: string;
   description: string | null;
   questions: Quiz["questions"] | null;
+  version: number | null;
+  tags: string[] | null;
   updated_at: string | null;
 }
 
 function rowToSaved(r: Row): SavedQuiz {
-  return {
-    id: r.id,
+  const quiz = parseQuiz({
     title: r.title,
     description: r.description ?? "",
     questions: r.questions ?? [],
+    version: r.version ?? 1,
+    tags: r.tags ?? [],
+  });
+  return {
+    id: r.id,
+    ...quiz,
     updatedAt: r.updated_at ? new Date(r.updated_at).getTime() : Date.now(),
   };
 }
@@ -51,6 +59,8 @@ export const supabaseStore: QuizStore = {
       title: quiz.title,
       description: quiz.description,
       questions: quiz.questions,
+      version: quiz.version,
+      tags: quiz.tags,
       updated_at: new Date().toISOString(),
       owner_id: u.user?.id,
     };
