@@ -45,7 +45,7 @@ type Mode =
 const cloud = isSupabaseConfigured;
 
 const GLASS =
-  "border border-white/25 bg-white/10 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.18)]";
+  "border border-[#dfe3d5] bg-[#fbfaf5] shadow-[0_12px_36px_rgba(2,18,13,0.12)]";
 
 export default function QuizApp() {
   const [mode, setMode] = useState<Mode>("bank");
@@ -226,56 +226,56 @@ export default function QuizApp() {
 
   // mode === "bank"
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 p-4 text-white sm:p-6">
-      <div className="flex items-end justify-between gap-3">
+    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 p-4 text-slate-900 sm:p-7 lg:p-10">
+      <div className="grid gap-7 rounded-[2rem] border border-white/10 bg-[#f3efdf] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:p-8 lg:grid-cols-[1fr_380px] lg:items-center lg:p-10">
         <div>
-          <p className="mb-1 text-xs font-bold uppercase tracking-[0.3em] text-amber-200/80">
-            Kashot
+          <p className="mb-3 inline-flex rounded-full bg-[#173c31] px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.22em] text-[#f8d46b]">
+            Kashot Workspace
           </p>
-          <h1 className="text-3xl font-black drop-shadow-sm sm:text-4xl">
-            Ngân hàng đề
+          <h1 className="max-w-xl text-4xl font-extrabold leading-[1.08] tracking-[-0.045em] text-[#102b23] sm:text-5xl">
+            Hôm nay bạn muốn học gì?
           </h1>
-          <p className="text-white/70">Chọn một bộ đề để chơi hoặc chỉnh sửa.</p>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600 sm:text-base">Tạo đề từ tài liệu, tổ chức lớp học và biến mỗi lần ôn tập thành một phiên học hiệu quả.</p>
           <div className="mt-1 flex flex-wrap items-center gap-2">
-            <span className="inline-block rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 text-xs text-white/70 backdrop-blur-md">
+            <span className="inline-block rounded-full border border-[#d6d7c8] bg-white/70 px-3 py-1 text-xs font-semibold text-slate-600">
               {user ? `☁ ${user.email}` : "📱 Lưu trên máy này (khách)"}
             </span>
             {cloud &&
               (user ? (
                 <button
                   onClick={doLogout}
-                  className="text-xs text-white/70 underline underline-offset-2 hover:text-white"
+                  className="text-xs font-semibold text-slate-500 underline underline-offset-4 hover:text-slate-900"
                 >
                   Đăng xuất
                 </button>
               ) : (
                 <button
                   onClick={() => setMode("auth")}
-                  className="text-xs font-semibold text-amber-200 underline underline-offset-2 hover:text-amber-100"
+                  className="text-xs font-bold text-emerald-800 underline underline-offset-4 hover:text-emerald-950"
                 >
                   👤 Đăng nhập giáo viên
                 </button>
               ))}
           </div>
         </div>
-        <div className="flex shrink-0 flex-col gap-2">
+        <div className="grid shrink-0 grid-cols-2 gap-2 rounded-3xl bg-[#102b23] p-3 shadow-xl sm:grid-cols-2">
           {cloud && (
             <button
               onClick={() => setMode("join")}
-              className="rounded-2xl border border-amber-200/50 bg-amber-300/90 px-4 py-3 font-extrabold text-amber-950 shadow-lg backdrop-blur-md transition hover:bg-amber-300 active:scale-95"
+              className="rounded-2xl bg-[#f7ce62] px-4 py-3 text-sm font-extrabold text-[#173126] transition hover:-translate-y-0.5 hover:bg-[#ffdb78] active:scale-95"
             >
               🔑 Tham gia PIN
             </button>
           )}
           <button
             onClick={() => setMode("ai")}
-            className="rounded-2xl border border-amber-200/50 bg-gradient-to-r from-amber-400 to-yellow-500 px-4 py-3 font-extrabold text-emerald-950 shadow-lg backdrop-blur-md transition hover:brightness-110 active:scale-95"
+            className="rounded-2xl bg-[#d7f37b] px-4 py-3 text-sm font-extrabold text-[#173126] transition hover:-translate-y-0.5 hover:bg-[#e4fa9b] active:scale-95"
           >
             ✨ Tạo bằng AI
           </button>
           <button
             onClick={() => setMode("import")}
-            className="rounded-2xl border border-white/25 bg-white/10 px-4 py-3 font-bold text-white backdrop-blur-md transition hover:bg-white/20 active:scale-95"
+            className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-white/20 active:scale-95"
           >
             📄 Nhập tài liệu
           </button>
@@ -284,7 +284,7 @@ export default function QuizApp() {
               setEditorInitial(null);
               setMode("editor");
             }}
-            className="rounded-2xl border border-white/50 bg-white/85 px-4 py-3 font-extrabold text-emerald-900 shadow-lg backdrop-blur-md transition hover:bg-white active:scale-95"
+            className="rounded-2xl bg-white px-4 py-3 text-sm font-extrabold text-[#173126] transition hover:-translate-y-0.5 hover:bg-[#f7f4e9] active:scale-95"
           >
             + Tạo đề
           </button>
@@ -293,7 +293,7 @@ export default function QuizApp() {
 
       <button
         onClick={() => setMode("history")}
-        className="self-start rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white/85 transition hover:bg-white/20"
+        className="self-start rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90 transition hover:bg-white/20"
       >
         📊 Xem tiến độ học
       </button>
@@ -318,8 +318,8 @@ export default function QuizApp() {
         🔀 Trộn câu hỏi khi chơi: {shuffleOn ? "BẬT" : "TẮT"}
       </button>
 
-      <div className={`rounded-2xl p-3 ${GLASS}`}>
-        <p className="mb-2 text-xs font-bold uppercase tracking-wide text-white/60">
+      <div className={`rounded-[1.5rem] p-4 ${GLASS}`}>
+        <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.16em] text-slate-500">
           Cách sử dụng bộ đề
         </p>
         <div className="grid grid-cols-3 gap-2">
@@ -335,8 +335,8 @@ export default function QuizApp() {
               onClick={() => setPlayMode(value)}
               className={`rounded-xl border px-3 py-2 text-sm font-bold transition ${
                 playMode === value
-                  ? "border-amber-200/60 bg-amber-300/25 text-amber-50"
-                  : "border-white/20 bg-white/5 text-white/75 hover:bg-white/10"
+                  ? "border-[#173c31] bg-[#173c31] text-white shadow-md"
+                  : "border-[#dfe3d5] bg-white text-slate-600 hover:border-[#aeb8a8] hover:text-slate-900"
               }`}
             >
               {label}
@@ -351,7 +351,7 @@ export default function QuizApp() {
         <div
           className={`flex flex-col items-center gap-3 rounded-3xl p-8 text-center ${GLASS}`}
         >
-          <p className="text-white/80">Chưa có bộ đề nào.</p>
+          <p className="text-slate-600">Chưa có bộ đề nào.</p>
           <button
             onClick={() => {
               setEditorInitial(null);
@@ -363,18 +363,18 @@ export default function QuizApp() {
           </button>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {quizzes.map((q) => (
             <div
               key={q.id}
-              className={`flex flex-col gap-3 rounded-3xl p-4 ${GLASS}`}
+              className={`flex flex-col gap-4 rounded-[1.75rem] p-5 transition hover:-translate-y-1 hover:shadow-[0_18px_44px_rgba(2,18,13,0.2)] ${GLASS}`}
             >
               <div>
-                <h2 className="text-xl font-bold">{q.title}</h2>
+                <h2 className="text-xl font-extrabold tracking-[-0.025em] text-[#173c31]">{q.title}</h2>
                 {q.description && (
-                  <p className="text-sm text-white/70">{q.description}</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">{q.description}</p>
                 )}
-                <p className="mt-1 text-xs text-white/60">
+                <p className="mt-2 text-xs font-semibold text-slate-500">
                   {q.questions.length} câu hỏi ·{" "}
                   {formatDuration(totalSeconds(q))}
                 </p>
@@ -384,7 +384,7 @@ export default function QuizApp() {
                     {q.tags.slice(0, 4).map((tag) => (
                       <span
                         key={tag}
-                        className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-xs text-white/75"
+                        className="rounded-full border border-[#dfe3d5] bg-[#f2f3eb] px-2.5 py-1 text-xs font-semibold text-slate-600"
                       >
                         {tag}
                       </span>
@@ -404,7 +404,7 @@ export default function QuizApp() {
               <div className="flex gap-2">
                 <button
                   onClick={() => startPlay(q)}
-                  className="flex-1 rounded-xl border border-white/50 bg-white/85 px-4 py-2 font-extrabold text-emerald-900 shadow backdrop-blur-md transition hover:bg-white active:scale-95"
+                  className="flex-1 rounded-xl bg-[#173c31] px-4 py-2.5 font-extrabold text-white shadow-md transition hover:bg-[#205040] active:scale-95"
                 >
                   ▶ Chơi
                 </button>
@@ -413,7 +413,7 @@ export default function QuizApp() {
                     setEditorInitial(q);
                     setMode("editor");
                   }}
-                  className="rounded-xl border border-white/25 bg-white/10 px-4 py-2 font-semibold text-white backdrop-blur-md transition hover:bg-white/20"
+                  className="rounded-xl border border-[#d6dcd1] bg-white px-4 py-2 font-semibold text-slate-700 transition hover:border-[#9ba99d] hover:bg-[#f5f6f0]"
                 >
                   ✎ Sửa
                 </button>
@@ -433,20 +433,20 @@ export default function QuizApp() {
                       setHostQuiz(q);
                       setMode("host");
                     }}
-                    className="rounded-lg border border-amber-200/40 bg-amber-300/20 px-3 py-1.5 font-semibold text-amber-100 backdrop-blur-md transition hover:bg-amber-300/35"
+                    className="rounded-lg border border-amber-300 bg-amber-100 px-3 py-1.5 font-semibold text-amber-900 transition hover:bg-amber-200"
                   >
                     🎉 Chủ trì (nhiều người)
                   </button>
                 )}
                 <button
                   onClick={() => handleDuplicate(q)}
-                  className="rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 font-semibold text-white/85 backdrop-blur-md transition hover:bg-white/15"
+                  className="rounded-lg border border-[#dfe3d5] bg-[#f2f3eb] px-3 py-1.5 font-semibold text-slate-600 transition hover:bg-[#e7eadf] hover:text-slate-900"
                 >
                   ⧉ Nhân bản
                 </button>
                 <button
                   onClick={() => handleExport(q)}
-                  className="rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 font-semibold text-white/85 backdrop-blur-md transition hover:bg-white/15"
+                  className="rounded-lg border border-[#dfe3d5] bg-[#f2f3eb] px-3 py-1.5 font-semibold text-slate-600 transition hover:bg-[#e7eadf] hover:text-slate-900"
                 >
                   ⬆ Xuất JSON
                 </button>

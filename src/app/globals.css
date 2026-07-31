@@ -1,22 +1,44 @@
 @import "tailwindcss";
 
 :root {
-  /* Nền xanh lá đậm tối */
-  --background: #052016;
-  --foreground: #f2f7f2;
+  --background: #071b16;
+  --foreground: #f7f8f2;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-serif);
+  --font-sans: var(--font-be-vietnam);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+  font-family: var(--font-be-vietnam), "Segoe UI", sans-serif;
+  letter-spacing: -0.012em;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 3px solid #f5c95f;
+  outline-offset: 3px;
 }
 
 /* Bong bóng nền trôi nhẹ (phong cách Liquid Glass) */
