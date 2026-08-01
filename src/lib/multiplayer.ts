@@ -31,6 +31,26 @@ function sb() {
   return supabase;
 }
 
+export function liveError(
+  error: unknown,
+  fallback = "Live game gặp lỗi. Vui lòng thử lại.",
+): Error {
+  if (error instanceof Error) return error;
+  if (error && typeof error === "object") {
+    const candidate = error as {
+      message?: unknown;
+      details?: unknown;
+      hint?: unknown;
+    };
+    const parts = [candidate.message, candidate.details, candidate.hint].filter(
+      (part): part is string => typeof part === "string" && part.trim().length > 0,
+    );
+    if (parts.length > 0) return new Error(parts.join(" · "));
+  }
+  if (typeof error === "string" && error.trim()) return new Error(error);
+  return new Error(fallback);
+}
+
 export function getClientId(): string {
   if (typeof window === "undefined") return "server";
   let id = localStorage.getItem("quiz-client-id");
@@ -80,7 +100,7 @@ export async function createRoom(quiz: Quiz, hostId: string): Promise<Room> {
       return room;
     }
     if (!error || error.code !== "23505") {
-      throw error ?? new Error("Không tạo được phòng.");
+      throw liveError(error, "Không tạo được phòng.");
     }
   }
   throw new Error("Không tạo được mã PIN, thử lại.");
@@ -97,7 +117,7 @@ export async function joinRoom(
     .select("*")
     .eq("pin", pin.trim())
     .maybeSingle();
-  if (rErr) throw rErr;
+  if (rErr) throw liveError(rErr);
   if (!room) throw new Error("Không tìm thấy phòng với mã PIN này.");
   if (room.status !== "lobby")
     throw new Error("Phòng đã bắt đầu, không vào được nữa.");
@@ -120,7 +140,7 @@ export async function joinRoom(
     requested_client_id: clientId,
     player_secret: playerSecret,
   });
-  if (pErr) throw pErr;
+  if (pErr) throw liveError(pErr);
   saveSecret("player", (player as Player).id, playerSecret);
   return { room: room as Room, player: player as Player };
 }
@@ -131,7 +151,7 @@ export async function listPlayers(roomId: string): Promise<Player[]> {
     .select("*")
     .eq("room_id", roomId)
     .order("created_at");
-  if (error) throw error;
+  if (error) throw liveError(error);
   return (data ?? []) as Player[];
 }
 
@@ -141,7 +161,7 @@ export async function fetchRoom(roomId: string): Promise<Room> {
     .select("*")
     .eq("id", roomId)
     .single();
-  if (error) throw error;
+  if (error) throw liveError(error);
   return data as Room;
 }
 
@@ -151,7 +171,7 @@ export async function startGame(roomId: string) {
     host_secret: getSecret("host", roomId),
     requested_action: "start",
   });
-  if (error) throw error;
+  if (error) throw liveError(error);
 }
 
 export async function revealQuestion(roomId: string) {
@@ -160,7 +180,7 @@ export async function revealQuestion(roomId: string) {
     host_secret: getSecret("host", roomId),
     requested_action: "reveal",
   });
-  if (error) throw error;
+  if (error) throw liveError(error);
 }
 
 export async function nextQuestion(roomId: string, index: number, total: number) {
@@ -171,7 +191,7 @@ export async function nextQuestion(roomId: string, index: number, total: number)
     host_secret: getSecret("host", roomId),
     requested_action: "next",
   });
-  if (error) throw error;
+  if (error) throw liveError(error);
 }
 
 /** Người chơi trả lời: tính điểm theo tốc độ, ghi answer + cộng điểm. */
@@ -188,7 +208,7 @@ export async function submitAnswer(
   });
   if (error) {
     if (error.message.includes("đã trả lời")) return null;
-    throw error;
+    throw liveError(error);
   }
   const result = Array.isArray(data) ? data[0] : data;
   return {
@@ -203,7 +223,7 @@ export async function deleteRoom(roomId: string) {
     host_secret: getSecret("host", roomId),
     requested_action: "close",
   });
-  if (error) throw error;
+  if (error) throw liveError(error);
 }
 
 export async function answeredCount(
@@ -214,7 +234,7 @@ export async function answeredCount(
     requested_room_id: roomId,
     requested_question_index: index,
   });
-  if (error) throw error;
+  if (error) throw liveError(error);
   return Number(data ?? 0);
 }
 

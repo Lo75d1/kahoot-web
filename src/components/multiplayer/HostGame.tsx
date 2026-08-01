@@ -8,6 +8,7 @@ import {
   deleteRoom,
   getClientId,
   listPlayers,
+  liveError,
   nextQuestion,
   revealQuestion,
   startGame,
@@ -59,7 +60,7 @@ export default function HostGame({
           setPlayers(list);
         });
       } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
+        setError(liveError(e).message);
       }
     })();
     return () => {
@@ -106,7 +107,7 @@ export default function HostGame({
       sfx.start();
       await startGame(room.id);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(liveError(e).message);
     }
   }, [room]);
 
