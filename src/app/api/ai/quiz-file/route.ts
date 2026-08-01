@@ -34,6 +34,7 @@ export async function POST(request: Request) {
       mode,
       count: Number.isFinite(rawCount) ? rawCount : undefined,
       safetyIdentifier,
+      apiKey: request.headers.get("x-openai-api-key") || undefined,
     }));
   } catch (error) {
     const message = error instanceof Error ? error.message : "Không xử lý được tệp.";

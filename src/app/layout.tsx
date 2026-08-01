@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://kahoot-web-pi.vercel.app"),
-  title: "UDA Assessment Hub — AI nhập đề từ tài liệu",
+  title: "UDA Assessment Hub — AI phân tích, code nhập đề",
   description:
-    "Tải PDF, Word, ảnh hoặc dán văn bản để AI nhận diện câu hỏi, đáp án và tạo bộ đề có cấu trúc.",
+    "Dùng AI ngoài hoặc AI local tạo quy tắc, rồi chạy code nhập tài liệu thành bộ đề có cấu trúc.",
   openGraph: {
     title: "UDA Assessment Hub — AI nhập đề từ tài liệu",
     description: "Một ô tải tài liệu để AI nhận diện và chuẩn hóa bộ đề.",

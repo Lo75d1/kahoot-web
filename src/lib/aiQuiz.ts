@@ -68,6 +68,7 @@ export async function createQuizWithAi(input: {
   mode: "extract" | "generate" | "outline";
   count?: number;
   safetyIdentifier?: string;
+  apiKey?: string;
 }): Promise<Quiz> {
   return createQuizFromContent({
     ...input,
@@ -82,6 +83,7 @@ export async function createQuizFromFileWithAi(input: {
   mode: "extract" | "generate" | "outline";
   count?: number;
   safetyIdentifier?: string;
+  apiKey?: string;
 }): Promise<Quiz> {
   const media = input.mimeType === "application/pdf"
     ? { type: "input_file" as const, filename: input.filename, file_data: input.fileDataUrl }
@@ -109,8 +111,9 @@ async function createQuizFromContent(input: {
   mode: "extract" | "generate" | "outline";
   count?: number;
   safetyIdentifier?: string;
+  apiKey?: string;
 }): Promise<Quiz> {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = input.apiKey?.trim() || process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("Máy chủ chưa cấu hình OPENAI_API_KEY.");
   const model = process.env.OPENAI_MODEL || "gpt-5.6-terra";
 

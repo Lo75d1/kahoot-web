@@ -2,9 +2,9 @@
 
 > Hồ sơ đồ án: [kiến trúc](docs/ARCHITECTURE.md) · [vận hành](docs/RUNBOOK.md) · [kịch bản bảo vệ](docs/DEMO_SCRIPT.md) · báo cáo Word trong thư mục `docs`.
 
-UDA Assessment Hub là đồ án tập trung vào **nhập đề bằng AI từ tài liệu** cho Trường Đại học Đông Á. Giảng viên kéo thả PDF/DOCX/ảnh/CSV hoặc dán văn bản vào một ô duy nhất; hệ thống trích xuất nội dung, nhận diện câu hỏi–đáp án, chuẩn hóa thành bộ đề và đưa về bản nháp cần duyệt. Học, ôn tập, làm bài và live quiz chỉ là các cách sử dụng tiếp theo của bộ đề đã nhập.
+UDA Assessment Hub là đồ án tập trung vào **AI ngoài phân tích cấu trúc, code trên web nhập đề** cho Trường Đại học Đông Á. Giảng viên kéo thả PDF/DOCX/CSV hoặc dán văn bản; đưa tài liệu cho ChatGPT/Claude/Gemini hoặc AI local của trường; sau đó dán JSON quy tắc/JSON bộ đề để hệ thống chạy code, chuẩn hóa và tạo bản nháp. Học, ôn tập, làm bài và live quiz chỉ là đầu ra phụ của bộ đề đã nhập.
 
-Để phân tích tài liệu tự do và ảnh scan trên production, cấu hình `OPENAI_API_KEY` trong Vercel. Khi chưa có khóa, tệp văn bản có cấu trúc marker/CSV hoặc dạng phổ biến `Câu 1 / A / B / Đáp án` vẫn được nhập bằng bộ phân tích cục bộ.
+Thầy cô có thể nhập API key riêng trong phần tùy chọn để phân tích trực tiếp. Khóa chỉ được gửi cho một yêu cầu, không lưu vào localStorage hoặc Supabase. Luồng mặc định không cần key: AI ngoài/AI local trả quy tắc, còn hệ thống chạy parser cục bộ.
 
 ## Chạy local
 

@@ -14,7 +14,7 @@ export default function UdaBrandHeader() {
             UDA Assessment Hub
           </p>
           <p className="mt-1 text-xs font-semibold text-slate-500">
-            AI nhập đề · Chuẩn hóa ngân hàng câu hỏi
+            AI ngoài phân tích · Code nhập đề
           </p>
         </div>
       </div>

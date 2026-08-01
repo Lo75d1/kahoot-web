@@ -261,12 +261,12 @@ export default function QuizApp() {
             <Sparkles size={13} aria-hidden /> UDA Assessment Hub
           </p>
           <h1 className="max-w-xl text-4xl font-extrabold leading-[1.08] tracking-[-0.045em] text-[#212121] sm:text-5xl">
-            Nhập đề bằng AI, nhanh hơn từ tài liệu gốc
+            AI phân tích cấu trúc, code nhập đề thật nhanh
           </h1>
           <p className="mt-3 text-xs font-extrabold uppercase tracking-[0.14em] text-[#018f41]">
             Đồ án đề xuất cho Trường Đại học Đông Á
           </p>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600 sm:text-base">Tải PDF, Word, ảnh hoặc dán văn bản — hệ thống tự nhận diện câu hỏi, đáp án và tạo bản nháp có cấu trúc để giảng viên duyệt.</p>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600 sm:text-base">Đưa tài liệu cho AI ngoài hoặc AI local của trường, nhận JSON quy tắc rồi để hệ thống chạy code nhập hàng loạt. API key cá nhân chỉ là tùy chọn.</p>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <span className="inline-block rounded-full border border-[#d6d7c8] bg-white/70 px-3 py-1 text-xs font-semibold text-slate-600">
               {user ? `Đã đồng bộ · ${user.email}` : "Lưu riêng trên thiết bị này"}
@@ -293,8 +293,8 @@ export default function QuizApp() {
           <p className="text-xs font-black uppercase tracking-[.18em] text-white/65">Quy trình nhanh</p>
           <ol className="mt-4 space-y-3 text-sm font-bold">
             <li className="flex gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-[#01823c]">1</span>Tải tài liệu hoặc dán nội dung</li>
-            <li className="flex gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-[#01823c]">2</span>AI phân tích câu hỏi và đáp án</li>
-            <li className="flex gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-[#01823c]">3</span>Duyệt nhanh rồi lưu bộ đề</li>
+            <li className="flex gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-[#01823c]">2</span>AI ngoài trả JSON quy tắc</li>
+            <li className="flex gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-[#01823c]">3</span>Code tách đề và tạo bản nháp</li>
           </ol>
           <div className="mt-5 grid grid-cols-2 gap-2">
           {cloud && (

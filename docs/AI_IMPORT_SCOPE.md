@@ -8,26 +8,23 @@ Luồng chính:
 
 1. Kéo thả PDF, Word, ảnh, CSV/TXT hoặc dán nội dung vào một ô.
 2. Trích xuất chữ ngay trên máy chủ.
-3. AI nhận diện câu hỏi, lựa chọn, đáp án, độ tin cậy và nguồn tham chiếu.
-4. Hiển thị bản nháp; giảng viên duyệt và lưu vào ngân hàng đề.
+3. AI ngoài hoặc AI local của trường trả JSON quy tắc/JSON bộ đề.
+4. Code trên web áp dụng quy tắc, tạo bản nháp; giảng viên duyệt và lưu.
 5. Bộ đề có thể được dùng để học, ôn tập, làm bài hoặc live quiz — đây là đầu ra phụ.
 
 ## Tại sao đây là cách nhập nhanh nhất
 
 - Một điểm bắt đầu duy nhất, không bắt người dùng chọn trước “Tạo bằng AI” hay “Nhập tài liệu”.
-- PDF/DOCX có chữ được trích xuất trước rồi gửi phần văn bản cho AI, giảm dữ liệu và độ trễ.
-- Ảnh/PDF scan được gửi trực tiếp cho model thị giác.
-- File có cấu trúc phổ biến được parser cục bộ xử lý khi AI chưa cấu hình.
-- AI trả structured output đúng schema nên không cần người dùng copy JSON qua lại.
+- PDF/DOCX có chữ được web trích xuất trước để code có thể xử lý trực tiếp.
+- Ảnh/PDF scan có thể đưa cho AI ngoài/AI local; người dùng dán JSON kết quả vào web.
+- File có cấu trúc phổ biến được parser cục bộ xử lý ngay, không cần AI.
+- JSON quy tắc tái sử dụng được cho nhiều đề cùng mẫu, giúp giảm số lần gọi AI.
 
-## Cấu hình bắt buộc cho AI production
+## API key cá nhân là tùy chọn
 
-```text
-OPENAI_API_KEY=<khóa API của dự án>
-OPENAI_MODEL=gpt-5.6-terra
-```
+Thầy/cô có thể nhập key trong giao diện để phân tích trực tiếp. Key chỉ tồn tại trong state của trang và header của một request, không được lưu vào localStorage/Supabase.
 
-Khóa chỉ được đặt trong biến môi trường của Vercel, tuyệt đối không commit vào GitHub.
+Luồng chính vẫn là AI ngoài/AI local trả quy tắc để code nhập đề, vì vậy hệ thống không phụ thuộc một nhà cung cấp AI cụ thể.
 
 ## Những gì không còn là trọng tâm giao diện
 
