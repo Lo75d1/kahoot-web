@@ -15,17 +15,17 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://kahoot-web-pi.vercel.app"),
-  title: "Kashot — học, ôn, thi và chơi",
+  title: "UDA Assessment Hub — học tập và khảo thí thông minh",
   description:
     "Biến tài liệu thành bộ câu hỏi có cấu trúc để học, ôn, thi và chơi trực tiếp.",
   openGraph: {
-    title: "Kashot — Học chắc, nhớ lâu",
+    title: "UDA Assessment Hub — Học tập và khảo thí thông minh",
     description: "Tạo đề từ tài liệu, học, ôn, thi và tổ chức trò chơi trực tiếp.",
-    images: [{ url: "/og.png", width: 1200, height: 630, alt: "Kashot — Học chắc, nhớ lâu" }],
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "UDA Assessment Hub" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Kashot — Học chắc, nhớ lâu",
+    title: "UDA Assessment Hub — Học tập và khảo thí thông minh",
     description: "Tạo đề từ tài liệu, học, ôn, thi và tổ chức trò chơi trực tiếp.",
     images: ["/og.png"],
   },

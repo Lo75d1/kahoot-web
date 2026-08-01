@@ -292,12 +292,15 @@ export default function QuizApp() {
       <div className="grid gap-7 rounded-[2rem] border border-white/10 bg-[#f3efdf] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:p-8 lg:grid-cols-[1fr_380px] lg:items-center lg:p-10">
         <div>
           <p className="mb-3 inline-flex rounded-full bg-[#173c31] px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.22em] text-[#f8d46b]">
-            <Sparkles size={13} aria-hidden /> Kashot Workspace
+            <Sparkles size={13} aria-hidden /> UDA Assessment Hub
           </p>
           <h1 className="max-w-xl text-4xl font-extrabold leading-[1.08] tracking-[-0.045em] text-[#102b23] sm:text-5xl">
             Hôm nay bạn muốn học gì?
           </h1>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600 sm:text-base">Tạo đề từ tài liệu, tổ chức lớp học và biến mỗi lần ôn tập thành một phiên học hiệu quả.</p>
+          <p className="mt-3 text-xs font-extrabold uppercase tracking-[0.14em] text-emerald-800">
+            Đồ án đề xuất cho Trường Đại học Đông Á
+          </p>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600 sm:text-base">Tạo đề từ tài liệu, tổ chức lớp học và biến mỗi lần ôn tập thành một phiên học hiệu quả.</p>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <span className="inline-block rounded-full border border-[#d6d7c8] bg-white/70 px-3 py-1 text-xs font-semibold text-slate-600">
               {user ? `Đã đồng bộ · ${user.email}` : "Lưu riêng trên thiết bị này"}

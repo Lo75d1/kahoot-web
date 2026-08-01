@@ -289,7 +289,7 @@ export default function ImportText({
 
         <div className="rounded-2xl border border-amber-200/25 bg-amber-300/10 p-3">
           <p className="mb-2 text-sm font-bold text-amber-100">
-            ✨ Xử lý tự động bằng AI trên Kashot
+            ✨ Xử lý tự động bằng AI trên UDA Assessment Hub
           </p>
           <div className="flex flex-wrap gap-2">
             <button

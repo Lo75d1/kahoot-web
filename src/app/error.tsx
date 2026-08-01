@@ -7,7 +7,7 @@ export default function ErrorPage({ reset }: { error: Error & { digest?: string 
     <main className="grid min-h-dvh place-items-center bg-[#071b16] p-5 text-center text-white">
       <div className="max-w-md rounded-[2rem] bg-[#f3efdf] p-8 text-slate-800 shadow-2xl">
         <AlertTriangle className="mx-auto text-amber-600" size={42} aria-hidden />
-        <h1 className="mt-4 text-2xl font-extrabold text-[#173c31]">Kashot vừa gặp sự cố</h1>
+        <h1 className="mt-4 text-2xl font-extrabold text-[#173c31]">UDA Assessment Hub vừa gặp sự cố</h1>
         <p className="mt-2 text-sm leading-6 text-slate-600">Dữ liệu của bạn vẫn được giữ nguyên. Hãy thử tải lại phần này.</p>
         <button onClick={reset} className="mx-auto mt-5 inline-flex min-h-12 items-center gap-2 rounded-xl bg-[#173c31] px-5 font-bold text-white hover:bg-[#205040]"><RefreshCw size={18} />Thử lại</button>
       </div>

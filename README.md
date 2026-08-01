@@ -1,6 +1,6 @@
-# Kashot
+# UDA Assessment Hub
 
-Kashot là web học, ôn, thi và chơi quiz trực tiếp. Giáo viên có thể tạo đề thủ công, nhập marker/CSV, tải PDF/DOCX/ảnh hoặc dùng AI trên server để nhận diện và tạo câu hỏi có cấu trúc. Ảnh và PDF scan được gửi thẳng tới model thị giác khi máy chủ có `OPENAI_API_KEY`.
+UDA Assessment Hub là đồ án đề xuất nền tảng học tập, ngân hàng đề và khảo thí thông minh cho Trường Đại học Đông Á. Giảng viên có thể tạo đề thủ công, nhập marker/CSV, tải PDF/DOCX/ảnh hoặc dùng AI trên server để nhận diện và tạo câu hỏi có cấu trúc. Ảnh và PDF scan được gửi thẳng tới model thị giác khi máy chủ có `OPENAI_API_KEY`.
 
 ## Chạy local
 

@@ -7,9 +7,9 @@ type InfoPage = "about" | "privacy" | "ai";
 
 const CONTENT: Record<InfoPage, { title: string; icon: typeof Info; body: React.ReactNode }> = {
   about: {
-    title: "Về Kashot",
+    title: "Về UDA Assessment Hub",
     icon: Heart,
-    body: <p>Kashot giúp giáo viên biến tài liệu thành bộ câu hỏi và dùng cùng một nội dung cho học, ôn, thi hoặc trò chơi trực tiếp. Mục tiêu là giảm thời gian nhập đề và tăng thời gian dành cho việc học thật sự.</p>,
+    body: <p>UDA Assessment Hub là đồ án đề xuất giúp giảng viên biến tài liệu thành ngân hàng câu hỏi và sử dụng nội dung đã kiểm duyệt cho học, ôn, thi hoặc lớp học trực tiếp.</p>,
   },
   privacy: {
     title: "Quyền riêng tư",
@@ -31,9 +31,9 @@ export default function SiteFooter() {
   return (
     <>
       <footer className="relative z-10 mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-5 pb-6 pt-2 text-xs text-white/60 sm:px-8">
-        <p>© {new Date().getFullYear()} Kashot · Học chắc, nhớ lâu</p>
+        <p>© {new Date().getFullYear()} UDA Assessment Hub · Đồ án đề xuất cho Đại học Đông Á</p>
         <nav className="flex flex-wrap gap-1" aria-label="Thông tin website">
-          <button onClick={() => setPage("about")} className="min-h-11 rounded-lg px-3 hover:bg-white/10 hover:text-white">Về Kashot</button>
+          <button onClick={() => setPage("about")} className="min-h-11 rounded-lg px-3 hover:bg-white/10 hover:text-white">Về hệ thống</button>
           <button onClick={() => setPage("privacy")} className="min-h-11 rounded-lg px-3 hover:bg-white/10 hover:text-white">Quyền riêng tư</button>
           <button onClick={() => setPage("ai")} className="min-h-11 rounded-lg px-3 hover:bg-white/10 hover:text-white">Cách dùng AI</button>
         </nav>
