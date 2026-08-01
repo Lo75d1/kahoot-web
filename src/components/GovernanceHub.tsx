@@ -29,6 +29,7 @@ import {
   type GovernanceSnapshot,
 } from "@/lib/governance";
 import OfficialExam from "./OfficialExam";
+import AssessmentOperations from "./AssessmentOperations";
 
 const PANEL = "rounded-3xl border border-slate-200 bg-white shadow-[0_14px_45px_rgba(0,90,42,0.12)]";
 
@@ -173,6 +174,7 @@ export default function GovernanceHub({ onBack }: { onBack: () => void }) {
               <section className={`${PANEL} p-5 sm:p-6`}><h2 className="font-black text-[#01823c]">Ca thi gần đây</h2><div className="mt-4 space-y-2">{data.sessions.length === 0 ? <p className="text-sm text-slate-500">Chưa có ca thi.</p> : data.sessions.slice(0, 6).map((session) => <div key={session.id} className="rounded-xl bg-slate-50 p-3"><div className="flex justify-between gap-2"><p className="font-bold">{session.title}</p><span className="text-xs font-bold uppercase text-[#018f41]">{session.status}</span></div><p className="mt-1 text-xs text-slate-500">{session.code} · {session.duration_minutes} phút</p>{canSchedule && <div className="mt-2 flex flex-wrap gap-1.5">{session.status === "scheduled" && <button onClick={() => action(`open-${session.id}`, () => setExamSessionStatus(session.id,"open"))} className="rounded-lg bg-[#018f41] px-2.5 py-1 text-xs font-bold text-white">Mở ca</button>}{session.status === "open" && <button onClick={() => action(`close-${session.id}`, () => setExamSessionStatus(session.id,"closed"))} className="rounded-lg bg-rose-600 px-2.5 py-1 text-xs font-bold text-white">Đóng ca</button>}{session.status === "closed" && <button onClick={() => action(`publish-${session.id}`, async () => { await publishExamResults(session.id); })} className="rounded-lg bg-[#f58220] px-2.5 py-1 text-xs font-bold text-white">Công bố điểm</button>}</div>}</div>)}</div></section>
             </div>
           </div>
+          <AssessmentOperations data={data} refresh={refresh} run={action} />
         </>
       )}
 
