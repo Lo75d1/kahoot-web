@@ -1,4 +1,4 @@
-# Bàn giao dự án — kahoot-web
+# Bàn giao dự án — UDA Assessment Hub
 
 Tài liệu này để một dev/AI khác (Codex) tiếp nhận dự án: chạy được, deploy được, và biết ý tưởng đã tới đâu.
 
