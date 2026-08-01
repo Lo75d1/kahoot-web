@@ -1,5 +1,6 @@
 import QuizApp from "@/components/QuizApp";
 import SoundToggle from "@/components/SoundToggle";
+import SiteFooter from "@/components/SiteFooter";
 
 export default function Home() {
   return (
@@ -27,9 +28,7 @@ export default function Home() {
       <SoundToggle />
       <div className="relative z-10 flex flex-1 flex-col">
         <QuizApp />
-        <footer className="pb-4 text-center text-xs text-white/50">
-          Kashot · Học chắc, nhớ lâu
-        </footer>
+        <SiteFooter />
       </div>
     </main>
   );

@@ -1,6 +1,27 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import {
+  BarChart3,
+  BookOpen,
+  Bot,
+  Brain,
+  CheckCircle2,
+  ClipboardCheck,
+  Copy,
+  Download,
+  Edit3,
+  FileUp,
+  GraduationCap,
+  LogIn,
+  Plus,
+  Presentation,
+  Search,
+  Shuffle,
+  Sparkles,
+  Trash2,
+  Users,
+} from "lucide-react";
 import type { Quiz } from "@/lib/types";
 import { ensureSeeded, localStore, type SavedQuiz } from "@/lib/store";
 import { supabaseStore } from "@/lib/supabaseStore";
@@ -62,6 +83,8 @@ export default function QuizApp() {
   const [toast, setToast] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [tagFilter, setTagFilter] = useState("all");
 
   // Chưa đăng nhập -> localStorage (khách). Đã đăng nhập -> Supabase (đề riêng).
   const store = user ? supabaseStore : localStore;
@@ -143,6 +166,28 @@ export default function QuizApp() {
     setPlayQuiz(shuffleOn ? shuffleQuiz(q) : q);
     setMode("play");
   };
+
+  const normalizedSearch = searchQuery.trim().toLocaleLowerCase("vi");
+  const allTags = Array.from(new Set(quizzes.flatMap((quiz) => quiz.tags))).sort(
+    (a, b) => a.localeCompare(b, "vi"),
+  );
+  const filteredQuizzes = quizzes.filter((quiz) => {
+    const matchesSearch =
+      !normalizedSearch ||
+      `${quiz.title} ${quiz.description} ${quiz.tags.join(" ")}`
+        .toLocaleLowerCase("vi")
+        .includes(normalizedSearch);
+    return matchesSearch && (tagFilter === "all" || quiz.tags.includes(tagFilter));
+  });
+  const totalQuestionCount = quizzes.reduce(
+    (sum, quiz) => sum + quiz.questions.length,
+    0,
+  );
+  const reviewCount = quizzes.reduce(
+    (sum, quiz) =>
+      sum + quiz.questions.filter((question) => question.status === "needs_review").length,
+    0,
+  );
 
   if (mode === "play" && playQuiz) {
     return (
@@ -230,7 +275,7 @@ export default function QuizApp() {
       <div className="grid gap-7 rounded-[2rem] border border-white/10 bg-[#f3efdf] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:p-8 lg:grid-cols-[1fr_380px] lg:items-center lg:p-10">
         <div>
           <p className="mb-3 inline-flex rounded-full bg-[#173c31] px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.22em] text-[#f8d46b]">
-            Kashot Workspace
+            <Sparkles size={13} aria-hidden /> Kashot Workspace
           </p>
           <h1 className="max-w-xl text-4xl font-extrabold leading-[1.08] tracking-[-0.045em] text-[#102b23] sm:text-5xl">
             Hôm nay bạn muốn học gì?
@@ -238,7 +283,7 @@ export default function QuizApp() {
           <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600 sm:text-base">Tạo đề từ tài liệu, tổ chức lớp học và biến mỗi lần ôn tập thành một phiên học hiệu quả.</p>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <span className="inline-block rounded-full border border-[#d6d7c8] bg-white/70 px-3 py-1 text-xs font-semibold text-slate-600">
-              {user ? `☁ ${user.email}` : "📱 Lưu trên máy này (khách)"}
+              {user ? `Đã đồng bộ · ${user.email}` : "Lưu riêng trên thiết bị này"}
             </span>
             {cloud &&
               (user ? (
@@ -253,7 +298,7 @@ export default function QuizApp() {
                   onClick={() => setMode("auth")}
                   className="text-xs font-bold text-emerald-800 underline underline-offset-4 hover:text-emerald-950"
                 >
-                  👤 Đăng nhập giáo viên
+                  <span className="inline-flex items-center gap-1.5"><LogIn size={14} aria-hidden />Đăng nhập giáo viên</span>
                 </button>
               ))}
           </div>
@@ -264,20 +309,20 @@ export default function QuizApp() {
               onClick={() => setMode("join")}
               className="rounded-2xl bg-[#f7ce62] px-4 py-3 text-sm font-extrabold text-[#173126] transition hover:-translate-y-0.5 hover:bg-[#ffdb78] active:scale-95"
             >
-              🔑 Tham gia PIN
+              <span className="inline-flex items-center justify-center gap-2"><Users size={18} aria-hidden />Tham gia PIN</span>
             </button>
           )}
           <button
             onClick={() => setMode("ai")}
             className="rounded-2xl bg-[#d7f37b] px-4 py-3 text-sm font-extrabold text-[#173126] transition hover:-translate-y-0.5 hover:bg-[#e4fa9b] active:scale-95"
           >
-            ✨ Tạo bằng AI
+            <span className="inline-flex items-center justify-center gap-2"><Bot size={18} aria-hidden />Tạo bằng AI</span>
           </button>
           <button
             onClick={() => setMode("import")}
             className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-white/20 active:scale-95"
           >
-            📄 Nhập tài liệu
+            <span className="inline-flex items-center justify-center gap-2"><FileUp size={18} aria-hidden />Nhập tài liệu</span>
           </button>
           <button
             onClick={() => {
@@ -286,50 +331,49 @@ export default function QuizApp() {
             }}
             className="rounded-2xl bg-white px-4 py-3 text-sm font-extrabold text-[#173126] transition hover:-translate-y-0.5 hover:bg-[#f7f4e9] active:scale-95"
           >
-            + Tạo đề
+            <span className="inline-flex items-center justify-center gap-2"><Plus size={18} aria-hidden />Tạo đề</span>
           </button>
         </div>
       </div>
 
-      <button
-        onClick={() => setMode("history")}
-        className="self-start rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90 transition hover:bg-white/20"
-      >
-        📊 Xem tiến độ học
-      </button>
-      {user && cloud && (
-        <button
-          onClick={() => setMode("classes")}
-          className="self-start rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white/85 transition hover:bg-white/20"
-        >
-          🏫 Lớp học &amp; giao bài
-        </button>
-      )}
+      <section className="grid grid-cols-3 gap-3" aria-label="Tổng quan ngân hàng đề">
+        {[
+          { Icon: BookOpen, value: quizzes.length, label: "Bộ đề" },
+          { Icon: CheckCircle2, value: totalQuestionCount, label: "Câu hỏi" },
+          { Icon: BarChart3, value: reviewCount, label: "Cần duyệt" },
+        ].map(({ Icon, value, label }) => (
+          <div key={label} className="rounded-2xl border border-white/10 bg-white/10 p-3 text-white backdrop-blur-md sm:p-4">
+            <Icon size={20} className="mb-3 text-[#d7f37b]" aria-hidden />
+            <p className="text-2xl font-extrabold">{value}</p>
+            <p className="text-xs font-semibold text-white/65">{label}</p>
+          </div>
+        ))}
+      </section>
 
-      {/* Toggle trộn câu hỏi */}
-      <button
-        onClick={() => setShuffleOn((v) => !v)}
-        className={`flex items-center gap-2 self-start rounded-full border px-4 py-2 text-sm font-semibold backdrop-blur-md transition ${
-          shuffleOn
-            ? "border-emerald-200/50 bg-emerald-400/25 text-emerald-50"
-            : "border-white/25 bg-white/10 text-white/80 hover:bg-white/20"
-        }`}
-      >
-        🔀 Trộn câu hỏi khi chơi: {shuffleOn ? "BẬT" : "TẮT"}
-      </button>
+      <div className="flex flex-wrap gap-2">
+        <button onClick={() => setMode("history")} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90 transition hover:bg-white/20">
+          <BarChart3 size={17} aria-hidden /> Tiến độ học
+        </button>
+        {user && cloud && (
+          <button onClick={() => setMode("classes")} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90 transition hover:bg-white/20">
+            <GraduationCap size={18} aria-hidden /> Lớp học &amp; giao bài
+          </button>
+        )}
+        <button onClick={() => setShuffleOn((v) => !v)} aria-pressed={shuffleOn} className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition ${shuffleOn ? "border-[#d7f37b] bg-[#d7f37b] text-[#173126]" : "border-white/15 bg-white/10 text-white/90 hover:bg-white/20"}`}>
+          <Shuffle size={17} aria-hidden /> Trộn câu: {shuffleOn ? "Bật" : "Tắt"}
+        </button>
+      </div>
 
       <div className={`rounded-[1.5rem] p-4 ${GLASS}`}>
         <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.16em] text-slate-500">
           Cách sử dụng bộ đề
         </p>
         <div className="grid grid-cols-3 gap-2">
-          {(
-            [
-              ["learn", "📖 Học"],
-              ["practice", "🧠 Ôn"],
-              ["exam", "📝 Thi"],
-            ] as [LearningMode, string][]
-          ).map(([value, label]) => (
+          {[
+            { value: "learn" as LearningMode, label: "Học", Icon: BookOpen },
+            { value: "practice" as LearningMode, label: "Ôn", Icon: Brain },
+            { value: "exam" as LearningMode, label: "Thi", Icon: ClipboardCheck },
+          ].map(({ value, label, Icon }) => (
             <button
               key={value}
               onClick={() => setPlayMode(value)}
@@ -339,11 +383,28 @@ export default function QuizApp() {
                   : "border-[#dfe3d5] bg-white text-slate-600 hover:border-[#aeb8a8] hover:text-slate-900"
               }`}
             >
-              {label}
+              <span className="inline-flex items-center justify-center gap-2"><Icon size={17} aria-hidden />{label}</span>
             </button>
           ))}
         </div>
       </div>
+
+      <section className="rounded-[1.5rem] border border-white/10 bg-white/10 p-3 backdrop-blur-md" aria-label="Tìm và lọc bộ đề">
+        <div className="grid gap-2 sm:grid-cols-[1fr_220px]">
+          <label className="relative block">
+            <Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" aria-hidden />
+            <span className="sr-only">Tìm bộ đề</span>
+            <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Tìm theo tên, mô tả hoặc chủ đề…" className="min-h-12 w-full rounded-xl border border-transparent bg-white pl-10 pr-4 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-[#f5c95f]" />
+          </label>
+          <label>
+            <span className="sr-only">Lọc theo chủ đề</span>
+            <select value={tagFilter} onChange={(event) => setTagFilter(event.target.value)} className="min-h-12 w-full rounded-xl border border-transparent bg-white px-3 text-sm font-semibold text-slate-700 focus:border-[#f5c95f]">
+              <option value="all">Tất cả chủ đề</option>
+              {allTags.map((tag) => <option key={tag} value={tag}>{tag}</option>)}
+            </select>
+          </label>
+        </div>
+      </section>
 
       {loading ? (
         <p className="py-10 text-center text-white/70">Đang tải…</p>
@@ -362,9 +423,15 @@ export default function QuizApp() {
             + Tạo bộ đề đầu tiên
           </button>
         </div>
+      ) : filteredQuizzes.length === 0 ? (
+        <div className={`flex flex-col items-center gap-3 rounded-3xl p-8 text-center ${GLASS}`}>
+          <Search size={28} className="text-slate-400" aria-hidden />
+          <p className="font-bold text-slate-800">Không tìm thấy bộ đề phù hợp</p>
+          <button onClick={() => { setSearchQuery(""); setTagFilter("all"); }} className="text-sm font-semibold text-emerald-800 underline underline-offset-4">Xóa bộ lọc</button>
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {quizzes.map((q) => (
+          {filteredQuizzes.map((q) => (
             <div
               key={q.id}
               className={`flex flex-col gap-4 rounded-[1.75rem] p-5 transition hover:-translate-y-1 hover:shadow-[0_18px_44px_rgba(2,18,13,0.2)] ${GLASS}`}
@@ -393,7 +460,7 @@ export default function QuizApp() {
                       (question) => question.status === "needs_review",
                     ) && (
                       <span className="rounded-full border border-amber-200/40 bg-amber-300/20 px-2 py-0.5 text-xs font-semibold text-amber-100">
-                        ⚠ Cần kiểm tra
+                        Cần kiểm tra
                       </span>
                     )}
                   </div>
@@ -406,7 +473,7 @@ export default function QuizApp() {
                   onClick={() => startPlay(q)}
                   className="flex-1 rounded-xl bg-[#173c31] px-4 py-2.5 font-extrabold text-white shadow-md transition hover:bg-[#205040] active:scale-95"
                 >
-                  ▶ Chơi
+                  <span className="inline-flex items-center justify-center gap-2"><Presentation size={17} aria-hidden />Bắt đầu</span>
                 </button>
                 <button
                   onClick={() => {
@@ -415,13 +482,13 @@ export default function QuizApp() {
                   }}
                   className="rounded-xl border border-[#d6dcd1] bg-white px-4 py-2 font-semibold text-slate-700 transition hover:border-[#9ba99d] hover:bg-[#f5f6f0]"
                 >
-                  ✎ Sửa
+                  <span className="inline-flex items-center gap-2"><Edit3 size={16} aria-hidden />Sửa</span>
                 </button>
                 <button
                   onClick={() => handleDelete(q)}
                   className="rounded-xl border border-rose-200/30 bg-rose-500/20 px-4 py-2 font-semibold text-rose-100 backdrop-blur-md transition hover:bg-rose-500/35"
                 >
-                  🗑
+                  <Trash2 size={17} aria-hidden />
                 </button>
               </div>
 
@@ -435,20 +502,20 @@ export default function QuizApp() {
                     }}
                     className="rounded-lg border border-amber-300 bg-amber-100 px-3 py-1.5 font-semibold text-amber-900 transition hover:bg-amber-200"
                   >
-                    🎉 Chủ trì (nhiều người)
+                    <span className="inline-flex items-center gap-2"><Users size={16} aria-hidden />Chủ trì live</span>
                   </button>
                 )}
                 <button
                   onClick={() => handleDuplicate(q)}
                   className="rounded-lg border border-[#dfe3d5] bg-[#f2f3eb] px-3 py-1.5 font-semibold text-slate-600 transition hover:bg-[#e7eadf] hover:text-slate-900"
                 >
-                  ⧉ Nhân bản
+                  <span className="inline-flex items-center gap-2"><Copy size={15} aria-hidden />Nhân bản</span>
                 </button>
                 <button
                   onClick={() => handleExport(q)}
                   className="rounded-lg border border-[#dfe3d5] bg-[#f2f3eb] px-3 py-1.5 font-semibold text-slate-600 transition hover:bg-[#e7eadf] hover:text-slate-900"
                 >
-                  ⬆ Xuất JSON
+                  <span className="inline-flex items-center gap-2"><Download size={15} aria-hidden />Xuất JSON</span>
                 </button>
               </div>
             </div>
