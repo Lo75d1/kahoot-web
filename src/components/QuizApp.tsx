@@ -75,6 +75,7 @@ export default function QuizApp() {
   const [editorInitial, setEditorInitial] = useState<SavedQuiz | null>(null);
   const [playQuiz, setPlayQuiz] = useState<Quiz | null>(null);
   const [hostQuiz, setHostQuiz] = useState<Quiz | null>(null);
+  const [launchQuiz, setLaunchQuiz] = useState<SavedQuiz | null>(null);
   const [shuffleOn, setShuffleOn] = useState(false);
   const [playMode, setPlayMode] = useState<LearningMode>("practice");
   const [activeAssignment, setActiveAssignment] = useState<Assignment | null>(
@@ -175,9 +176,11 @@ export default function QuizApp() {
     }
   };
 
-  const startPlay = (q: SavedQuiz) => {
+  const startPlay = (q: SavedQuiz, selectedMode: LearningMode) => {
     setActiveAssignment(null);
+    setPlayMode(selectedMode);
     setPlayQuiz(shuffleOn ? shuffleQuiz(q) : q);
+    setLaunchQuiz(null);
     setMode("play");
   };
 
@@ -378,7 +381,7 @@ export default function QuizApp() {
         </button>
       </div>
 
-      <div className={`rounded-[1.5rem] p-4 ${GLASS}`}>
+      <div className={`hidden rounded-[1.5rem] p-4 ${GLASS}`} aria-hidden="true">
         <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.16em] text-slate-500">
           Cách sử dụng bộ đề
         </p>
@@ -484,7 +487,7 @@ export default function QuizApp() {
               {/* Hàng nút chính */}
               <div className="flex gap-2">
                 <button
-                  onClick={() => startPlay(q)}
+                  onClick={() => setLaunchQuiz(q)}
                   className="flex-1 rounded-xl bg-[#173c31] px-4 py-2.5 font-extrabold text-white shadow-md transition hover:bg-[#205040] active:scale-95"
                 >
                   <span className="inline-flex items-center justify-center gap-2"><Presentation size={17} aria-hidden />Bắt đầu</span>
@@ -508,7 +511,7 @@ export default function QuizApp() {
 
               {/* Hàng nút phụ */}
               <div className="flex flex-wrap gap-2 text-sm">
-                {cloud && (
+                {false && cloud && (
                   <button
                     onClick={() => {
                       setHostQuiz(q);
@@ -538,6 +541,69 @@ export default function QuizApp() {
       )}
 
       {/* Thông báo nổi */}
+      {launchQuiz && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-[#071d18]/70 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="launch-title"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setLaunchQuiz(null);
+          }}
+        >
+          <div className="w-full max-w-xl rounded-[2rem] border border-white/50 bg-[#fbfaf5] p-6 shadow-2xl sm:p-8">
+            <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-emerald-700">
+              Bắt đầu bộ đề
+            </p>
+            <h2 id="launch-title" className="mt-2 text-2xl font-black text-[#173c31]">
+              Bạn muốn học theo cách nào?
+            </h2>
+            <p className="mt-1 line-clamp-2 text-sm text-slate-500">{launchQuiz.title}</p>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              {[
+                { mode: "learn" as LearningMode, title: "Học", detail: "Có gợi ý, đáp án và lời giải ngay", Icon: BookOpen, tone: "border-emerald-200 bg-emerald-50 text-emerald-900" },
+                { mode: "practice" as LearningMode, title: "Ôn tập", detail: "Luyện nhanh, phản hồi và tính điểm", Icon: Brain, tone: "border-sky-200 bg-sky-50 text-sky-900" },
+                { mode: "exam" as LearningMode, title: "Làm bài thi", detail: "Không gợi ý, xem kết quả khi nộp", Icon: ClipboardCheck, tone: "border-violet-200 bg-violet-50 text-violet-900" },
+              ].map(({ mode: selectedMode, title, detail, Icon, tone }) => (
+                <button
+                  key={selectedMode}
+                  onClick={() => startPlay(launchQuiz, selectedMode)}
+                  className={`flex min-h-24 items-start gap-3 rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${tone}`}
+                >
+                  <Icon size={24} aria-hidden className="mt-0.5 shrink-0" />
+                  <span>
+                    <strong className="block text-base">{title}</strong>
+                    <span className="mt-1 block text-xs leading-5 opacity-75">{detail}</span>
+                  </span>
+                </button>
+              ))}
+              {cloud && (
+                <button
+                  onClick={() => {
+                    setHostQuiz(launchQuiz);
+                    setLaunchQuiz(null);
+                    setMode("host");
+                  }}
+                  className="flex min-h-24 items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-left text-amber-950 transition hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <Users size={24} aria-hidden className="mt-0.5 shrink-0" />
+                  <span>
+                    <strong className="block text-base">Chủ trì live</strong>
+                    <span className="mt-1 block text-xs leading-5 opacity-75">Hiện PIN và QR để cả lớp tham gia</span>
+                  </span>
+                </button>
+              )}
+            </div>
+            <button
+              onClick={() => setLaunchQuiz(null)}
+              className="mt-5 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
+            >
+              Để sau
+            </button>
+          </div>
+        </div>
+      )}
+
       {toast && (
         <div className="fixed inset-x-0 bottom-6 z-50 flex justify-center px-4">
           <div className="rounded-full border border-white/30 bg-slate-900/80 px-5 py-2.5 text-sm font-semibold text-white shadow-xl backdrop-blur-xl">
