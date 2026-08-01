@@ -289,15 +289,15 @@ export default function QuizApp() {
   // mode === "bank"
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 p-4 text-slate-900 sm:p-7 lg:p-10">
-      <div className="grid gap-7 rounded-[2rem] border border-white/10 bg-[#f3efdf] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:p-8 lg:grid-cols-[1fr_380px] lg:items-center lg:p-10">
+      <div className="grid gap-7 rounded-[2rem] border border-white/60 bg-white p-6 shadow-[0_24px_80px_rgba(0,70,34,0.24)] sm:p-8 lg:grid-cols-[1fr_380px] lg:items-center lg:p-10">
         <div>
-          <p className="mb-3 inline-flex rounded-full bg-[#173c31] px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.22em] text-[#f8d46b]">
+          <p className="mb-3 inline-flex rounded-full bg-[#018f41] px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.22em] text-white">
             <Sparkles size={13} aria-hidden /> UDA Assessment Hub
           </p>
-          <h1 className="max-w-xl text-4xl font-extrabold leading-[1.08] tracking-[-0.045em] text-[#102b23] sm:text-5xl">
+          <h1 className="max-w-xl text-4xl font-extrabold leading-[1.08] tracking-[-0.045em] text-[#212121] sm:text-5xl">
             Hôm nay bạn muốn học gì?
           </h1>
-          <p className="mt-3 text-xs font-extrabold uppercase tracking-[0.14em] text-emerald-800">
+          <p className="mt-3 text-xs font-extrabold uppercase tracking-[0.14em] text-[#018f41]">
             Đồ án đề xuất cho Trường Đại học Đông Á
           </p>
           <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600 sm:text-base">Tạo đề từ tài liệu, tổ chức lớp học và biến mỗi lần ôn tập thành một phiên học hiệu quả.</p>
@@ -323,18 +323,18 @@ export default function QuizApp() {
               ))}
           </div>
         </div>
-        <div className="grid shrink-0 grid-cols-2 gap-2 rounded-3xl bg-[#102b23] p-3 shadow-xl sm:grid-cols-2">
+        <div className="grid shrink-0 grid-cols-2 gap-2 rounded-3xl bg-[#018f41] p-3 shadow-xl sm:grid-cols-2">
           {cloud && (
             <button
               onClick={() => setMode("join")}
-              className="rounded-2xl bg-[#f7ce62] px-4 py-3 text-sm font-extrabold text-[#173126] transition hover:-translate-y-0.5 hover:bg-[#ffdb78] active:scale-95"
+              className="rounded-2xl bg-[#f58220] px-4 py-3 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-[#dc6d12] active:scale-95"
             >
               <span className="inline-flex items-center justify-center gap-2"><Users size={18} aria-hidden />Tham gia PIN</span>
             </button>
           )}
           <button
             onClick={() => setMode("ai")}
-            className="rounded-2xl bg-[#d7f37b] px-4 py-3 text-sm font-extrabold text-[#173126] transition hover:-translate-y-0.5 hover:bg-[#e4fa9b] active:scale-95"
+            className="rounded-2xl bg-[#ef9b83] px-4 py-3 text-sm font-extrabold text-[#212121] transition hover:-translate-y-0.5 hover:bg-[#f5b7a5] active:scale-95"
           >
             <span className="inline-flex items-center justify-center gap-2"><Bot size={18} aria-hidden />Tạo bằng AI</span>
           </button>
@@ -349,7 +349,7 @@ export default function QuizApp() {
               setEditorInitial(null);
               setMode("editor");
             }}
-            className="rounded-2xl bg-white px-4 py-3 text-sm font-extrabold text-[#173126] transition hover:-translate-y-0.5 hover:bg-[#f7f4e9] active:scale-95"
+            className="rounded-2xl bg-white px-4 py-3 text-sm font-extrabold text-[#01823c] transition hover:-translate-y-0.5 hover:bg-[#f0f2f1] active:scale-95"
           >
             <span className="inline-flex items-center justify-center gap-2"><Plus size={18} aria-hidden />Tạo đề</span>
           </button>
@@ -363,7 +363,7 @@ export default function QuizApp() {
           { Icon: BarChart3, value: reviewCount, label: "Cần duyệt" },
         ].map(({ Icon, value, label }) => (
           <div key={label} className="rounded-2xl border border-white/10 bg-white/10 p-3 text-white backdrop-blur-md sm:p-4">
-            <Icon size={20} className="mb-3 text-[#d7f37b]" aria-hidden />
+            <Icon size={20} className="mb-3 text-[#ef9b83]" aria-hidden />
             <p className="text-2xl font-extrabold">{value}</p>
             <p className="text-xs font-semibold text-white/65">{label}</p>
           </div>
@@ -379,7 +379,7 @@ export default function QuizApp() {
             <GraduationCap size={18} aria-hidden /> Lớp học &amp; giao bài
           </button>
         )}
-        <button onClick={() => setShuffleOn((v) => !v)} aria-pressed={shuffleOn} className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition ${shuffleOn ? "border-[#d7f37b] bg-[#d7f37b] text-[#173126]" : "border-white/15 bg-white/10 text-white/90 hover:bg-white/20"}`}>
+        <button onClick={() => setShuffleOn((v) => !v)} aria-pressed={shuffleOn} className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition ${shuffleOn ? "border-[#ef9b83] bg-[#ef9b83] text-[#212121]" : "border-white/25 bg-white/10 text-white/90 hover:bg-white/20"}`}>
           <Shuffle size={17} aria-hidden /> Trộn câu: {shuffleOn ? "Bật" : "Tắt"}
         </button>
       </div>
@@ -399,7 +399,7 @@ export default function QuizApp() {
               onClick={() => setPlayMode(value)}
               className={`rounded-xl border px-3 py-2 text-sm font-bold transition ${
                 playMode === value
-                  ? "border-[#173c31] bg-[#173c31] text-white shadow-md"
+                  ? "border-[#018f41] bg-[#018f41] text-white shadow-md"
                   : "border-[#dfe3d5] bg-white text-slate-600 hover:border-[#aeb8a8] hover:text-slate-900"
               }`}
             >
@@ -414,11 +414,11 @@ export default function QuizApp() {
           <label className="relative block">
             <Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" aria-hidden />
             <span className="sr-only">Tìm bộ đề</span>
-            <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Tìm theo tên, mô tả hoặc chủ đề…" className="min-h-12 w-full rounded-xl border border-transparent bg-white pl-10 pr-4 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-[#f5c95f]" />
+            <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Tìm theo tên, mô tả hoặc chủ đề…" className="min-h-12 w-full rounded-xl border border-transparent bg-white pl-10 pr-4 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-[#f58220]" />
           </label>
           <label>
             <span className="sr-only">Lọc theo chủ đề</span>
-            <select value={tagFilter} onChange={(event) => setTagFilter(event.target.value)} className="min-h-12 w-full rounded-xl border border-transparent bg-white px-3 text-sm font-semibold text-slate-700 focus:border-[#f5c95f]">
+            <select value={tagFilter} onChange={(event) => setTagFilter(event.target.value)} className="min-h-12 w-full rounded-xl border border-transparent bg-white px-3 text-sm font-semibold text-slate-700 focus:border-[#f58220]">
               <option value="all">Tất cả chủ đề</option>
               {allTags.map((tag) => <option key={tag} value={tag}>{tag}</option>)}
             </select>
@@ -457,7 +457,7 @@ export default function QuizApp() {
               className={`flex flex-col gap-4 rounded-[1.75rem] p-5 transition hover:-translate-y-1 hover:shadow-[0_18px_44px_rgba(2,18,13,0.2)] ${GLASS}`}
             >
               <div>
-                <h2 className="text-xl font-extrabold tracking-[-0.025em] text-[#173c31]">{q.title}</h2>
+                <h2 className="text-xl font-extrabold tracking-[-0.025em] text-[#01823c]">{q.title}</h2>
                 {q.description && (
                   <p className="mt-1 text-sm leading-6 text-slate-600">{q.description}</p>
                 )}
@@ -491,7 +491,7 @@ export default function QuizApp() {
               <div className="flex gap-2">
                 <button
                   onClick={() => setLaunchQuiz(q)}
-                  className="flex-1 rounded-xl bg-[#173c31] px-4 py-2.5 font-extrabold text-white shadow-md transition hover:bg-[#205040] active:scale-95"
+                  className="flex-1 rounded-xl bg-[#018f41] px-4 py-2.5 font-extrabold text-white shadow-md transition hover:bg-[#01823c] active:scale-95"
                 >
                   <span className="inline-flex items-center justify-center gap-2"><Presentation size={17} aria-hidden />Bắt đầu</span>
                 </button>
@@ -546,7 +546,7 @@ export default function QuizApp() {
       {/* Thông báo nổi */}
       {launchQuiz && (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-[#071d18]/70 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 grid place-items-center bg-[#006e33]/75 p-4 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby="launch-title"
@@ -558,7 +558,7 @@ export default function QuizApp() {
             <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-emerald-700">
               Bắt đầu bộ đề
             </p>
-            <h2 id="launch-title" className="mt-2 text-2xl font-black text-[#173c31]">
+            <h2 id="launch-title" className="mt-2 text-2xl font-black text-[#01823c]">
               Bạn muốn học theo cách nào?
             </h2>
             <p className="mt-1 line-clamp-2 text-sm text-slate-500">{launchQuiz.title}</p>

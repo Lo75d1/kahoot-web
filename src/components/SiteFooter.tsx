@@ -44,8 +44,8 @@ export default function SiteFooter() {
           <section role="dialog" aria-modal="true" aria-labelledby="site-info-title" className="w-full max-w-lg rounded-[1.75rem] border border-white/15 bg-[#f7f4e9] p-6 text-slate-800 shadow-2xl sm:p-8">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
-                <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#173c31] text-[#d7f37b]"><InfoIcon size={22} aria-hidden /></span>
-                <h2 id="site-info-title" className="text-xl font-extrabold text-[#173c31]">{info.title}</h2>
+                <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#018f41] text-white"><InfoIcon size={22} aria-hidden /></span>
+                <h2 id="site-info-title" className="text-xl font-extrabold text-[#01823c]">{info.title}</h2>
               </div>
               <button onClick={() => setPage(null)} aria-label="Đóng" className="grid h-11 w-11 place-items-center rounded-xl text-slate-500 hover:bg-slate-200 hover:text-slate-900"><X size={20} /></button>
             </div>
