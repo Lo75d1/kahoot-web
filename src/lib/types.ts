@@ -30,6 +30,8 @@ export interface Question {
   answers: Answer[];
   explanation: string;
   hint: string;
+  /** Số giây phải chờ trước khi người học được mở gợi ý. */
+  hintDelaySeconds?: number;
   difficulty: QuestionDifficulty;
   topics: string[];
   status: ReviewStatus;
@@ -51,4 +53,5 @@ export interface RoundResult {
   correct: boolean;
   earned: number;
   responseMs: number | null; // null = hết giờ không trả lời
+  pendingReview?: boolean;
 }

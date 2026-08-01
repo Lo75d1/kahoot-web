@@ -86,4 +86,23 @@ describe("parseQuiz", () => {
     expect(quiz.questions[0].type).toBe("short_answer");
     expect(quiz.questions[0].answers).toHaveLength(1);
   });
+
+  it("accepts an essay and normalizes delayed hints", () => {
+    const quiz = parseQuiz({
+      questions: [{
+        type: "essay",
+        text: "Phân tích vai trò của chuyển đổi số trong giáo dục.",
+        answers: [],
+        hint: "Lập luận theo ba khía cạnh: tiếp cận, tương tác và đánh giá.",
+        hintDelaySeconds: 45,
+        timeLimit: 120,
+      }],
+    });
+
+    expect(quiz.questions[0]).toMatchObject({
+      type: "essay",
+      answers: [],
+      hintDelaySeconds: 45,
+    });
+  });
 });

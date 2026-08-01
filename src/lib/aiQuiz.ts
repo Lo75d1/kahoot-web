@@ -21,20 +21,23 @@ const quizSchema = {
         additionalProperties: false,
         required: [
           "type", "text", "timeLimit", "points", "answers", "explanation",
-          "hint", "difficulty", "topics", "status", "origin", "confidence",
+          "hint", "hintDelaySeconds", "difficulty", "topics", "status", "origin", "confidence",
           "sourceRefs",
         ],
         properties: {
           type: {
             type: "string",
-            enum: ["single_choice", "multiple_choice", "true_false"],
+            enum: [
+              "single_choice", "multiple_choice", "true_false",
+              "short_answer", "fill_blank", "essay",
+            ],
           },
           text: { type: "string" },
           timeLimit: { type: "integer", minimum: 5, maximum: 120 },
           points: { type: "integer", minimum: 100, maximum: 5000 },
           answers: {
             type: "array",
-            minItems: 2,
+            minItems: 0,
             maxItems: 8,
             items: {
               type: "object",
@@ -48,6 +51,7 @@ const quizSchema = {
           },
           explanation: { type: "string" },
           hint: { type: "string" },
+          hintDelaySeconds: { type: "integer", minimum: 0, maximum: 120 },
           difficulty: { type: "string", enum: ["easy", "medium", "hard"] },
           topics: { type: "array", items: { type: "string" } },
           status: {

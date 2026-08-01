@@ -10,6 +10,7 @@ import {
   Copy,
   Download,
   Edit3,
+  FileText,
   LogIn,
   Plus,
   Presentation,
@@ -33,6 +34,7 @@ import {
   shuffleQuiz,
 } from "@/lib/quizIo";
 import Player from "./Player";
+import FormPlayer from "./FormPlayer";
 import QuizEditor from "./QuizEditor";
 import HostGame from "./multiplayer/HostGame";
 import PlayerGame from "./multiplayer/PlayerGame";
@@ -49,6 +51,7 @@ type Mode =
   | "bank"
   | "editor"
   | "play"
+  | "form"
   | "host"
   | "join"
   | "auth"
@@ -219,6 +222,10 @@ export default function QuizApp() {
         onExit={() => setMode("bank")}
       />
     );
+  }
+
+  if (mode === "form" && playQuiz) {
+    return <FormPlayer quiz={playQuiz} onExit={() => setMode("bank")} onComplete={(results, score) => saveAttempt(playQuiz, "exam", results, score)} />;
   }
 
   if (mode === "host" && hostQuiz) {
@@ -539,6 +546,7 @@ export default function QuizApp() {
                   </span>
                 </button>
               ))}
+              <button onClick={() => { setPlayQuiz(shuffleOn ? shuffleQuiz(launchQuiz) : launchQuiz); setLaunchQuiz(null); setMode("form"); }} className="flex min-h-24 items-start gap-3 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-left text-sky-950 transition hover:-translate-y-0.5 hover:shadow-md"><FileText size={24} aria-hidden className="mt-0.5 shrink-0"/><span><strong className="block text-base">Biểu mẫu</strong><span className="mt-1 block text-xs leading-5 opacity-75">Hiển thị toàn bộ câu như Google Forms, có tự luận</span></span></button>
               {cloud && (
                 <button
                   onClick={() => {

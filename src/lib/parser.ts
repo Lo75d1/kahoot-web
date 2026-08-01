@@ -141,6 +141,10 @@ function parseQuestion(raw: unknown, index: number): Question {
     answers,
     explanation: typeof q.explanation === "string" ? q.explanation.trim() : "",
     hint: typeof q.hint === "string" ? q.hint.trim() : "",
+    hintDelaySeconds:
+      typeof q.hintDelaySeconds === "number" && Number.isFinite(q.hintDelaySeconds)
+        ? Math.min(120, Math.max(0, Math.round(q.hintDelaySeconds)))
+        : 0,
     difficulty,
     topics: parseStringArray(q.topics),
     status,

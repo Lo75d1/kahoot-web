@@ -77,7 +77,8 @@ export default function Player({
         : typeof choice === "number"
           ? [choice]
           : [];
-      const correct = isQuestionResponseCorrect(question, choice);
+      const pendingReview = question.type === "essay" && typeof choice === "string" && choice.trim().length > 0;
+      const correct = pendingReview ? false : isQuestionResponseCorrect(question, choice);
 
       const newStreak = correct ? streak + 1 : 0;
       const base = correct
@@ -91,9 +92,10 @@ export default function Player({
       setLastEarned(earned);
       setScore((s) => s + earned);
       setStreak(newStreak);
-      setResults((r) => [...r, { correct, earned, responseMs }]);
+      setResults((r) => [...r, { correct, earned, responseMs, pendingReview }]);
       setPhase("revealed");
-      if (correct) sfx.correct();
+      if (pendingReview) sfx.tick();
+      else if (correct) sfx.correct();
       else sfx.wrong();
     },
     [question, streak],
@@ -155,8 +157,10 @@ export default function Player({
 
   if (done) {
     const correctCount = results.filter((r) => r.correct).length;
+    const pendingCount = results.filter((r) => r.pendingReview).length;
     const total = quiz.questions.length;
-    const pct = Math.round((correctCount / total) * 100);
+    const gradedTotal = Math.max(0, total - pendingCount);
+    const pct = gradedTotal ? Math.round((correctCount / gradedTotal) * 100) : 0;
     const message =
       pct === 100
         ? "Tuyệt đối! 🏆"
@@ -179,8 +183,9 @@ export default function Player({
             {score.toLocaleString("vi-VN")}
           </p>
           <p className="mt-3 text-white/90">
-            Đúng {correctCount}/{total} câu ({pct}%)
+            Đúng {correctCount}/{gradedTotal} câu đã chấm{gradedTotal ? ` (${pct}%)` : ""}
           </p>
+          {pendingCount > 0 && <p className="mt-1 text-sm text-sky-100">{pendingCount} câu tự luận đang chờ giảng viên chấm</p>}
           {results.length > 0 && (
             <p className="mt-2 text-xs text-white/60">
               Chế độ: {mode === "learn" ? "Học" : mode === "exam" ? "Thi" : "Luyện tập"}
@@ -194,8 +199,10 @@ export default function Player({
               className="flex items-center justify-between border-b border-white/10 px-4 py-2.5 text-base last:border-0"
             >
               <span className="text-white/80">Câu {i + 1}</span>
-              <span className={r.correct ? "text-emerald-200" : "text-rose-200"}>
-                {r.correct
+              <span className={r.pendingReview ? "text-sky-200" : r.correct ? "text-emerald-200" : "text-rose-200"}>
+                {r.pendingReview
+                  ? "✎ Chờ chấm"
+                  : r.correct
                   ? "✓ Đúng"
                   : r.responseMs === null
                     ? "⏰ Hết giờ"
@@ -229,6 +236,9 @@ export default function Player({
     Math.min(100, (timeLeftMs / (question.timeLimit * 1000)) * 100),
   );
   const secondsLeft = Math.ceil(timeLeftMs / 1000);
+  const elapsedSeconds = Math.max(0, question.timeLimit - secondsLeft);
+  const hintWait = Math.max(0, (question.hintDelaySeconds ?? 0) - elapsedSeconds);
+  const hintUnlocked = hintWait === 0;
   const lastCorrect = results[results.length - 1]?.correct;
 
   return (
@@ -254,13 +264,14 @@ export default function Player({
         </h2>
       </div>
 
-      {mode === "learn" && question.hint && phase === "answering" && (
+      {mode !== "exam" && question.hint && phase === "answering" && (
         <div className="text-center">
           <button
-            onClick={() => setHintVisible((visible) => !visible)}
+            onClick={() => hintUnlocked && setHintVisible((visible) => !visible)}
+            disabled={!hintUnlocked}
             className="rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white/85"
           >
-            {hintVisible ? "Ẩn gợi ý" : "💡 Xem gợi ý"}
+            {!hintUnlocked ? `💡 Gợi ý mở sau ${hintWait}s` : hintVisible ? "Ẩn gợi ý" : "💡 Xem gợi ý"}
           </button>
           {hintVisible && (
             <p className="mt-2 rounded-2xl border border-amber-200/25 bg-amber-300/15 p-3 text-sm text-amber-50">
@@ -288,7 +299,18 @@ export default function Player({
         </div>
       </div>
 
-      {question.type === "short_answer" || question.type === "fill_blank" ? (
+      {question.type === "essay" ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-3">
+          <textarea
+            value={textResponse}
+            onChange={(event) => setTextResponse(event.target.value)}
+            disabled={phase === "revealed"}
+            placeholder="Nhập bài tự luận của bạn…"
+            className="min-h-56 w-full rounded-2xl border border-white/40 bg-white/95 px-5 py-4 text-base leading-7 text-slate-900 shadow-lg outline-none focus:ring-2 focus:ring-amber-200"
+          />
+          <div className="flex w-full items-center justify-between gap-3 text-xs text-white/70"><span>{textResponse.trim().length.toLocaleString("vi-VN")} ký tự</span>{phase === "answering" && <button onClick={() => reveal(textResponse)} disabled={!textResponse.trim()} className="rounded-full border border-amber-100/60 bg-amber-300 px-8 py-3 text-sm font-extrabold text-emerald-950 shadow-lg transition hover:bg-amber-200 disabled:opacity-40">Nộp câu tự luận</button>}</div>
+        </div>
+      ) : question.type === "short_answer" || question.type === "fill_blank" ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-3">
           <input
             value={textResponse}
@@ -400,7 +422,9 @@ export default function Player({
         <div
           className={`flex flex-col items-center gap-3 rounded-3xl p-4 text-center text-white ${GLASS}`}
         >
-          {mode === "exam" ? (
+          {question.type === "essay" && textResponse.trim() ? (
+            <p className="text-xl font-bold text-sky-100">✎ Đã ghi nhận · chờ giảng viên chấm</p>
+          ) : mode === "exam" ? (
             <p className="text-xl font-bold text-sky-100">✓ Đã ghi nhận đáp án</p>
           ) : selected === null &&
             selectedMany.length === 0 &&

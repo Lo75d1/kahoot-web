@@ -22,6 +22,7 @@ interface DraftQuestion {
   answers: DraftAnswer[];
   explanation: string;
   hint: string;
+  hintDelaySeconds: string;
   difficulty: QuestionDifficulty;
   topics: string;
   status: ReviewStatus;
@@ -50,6 +51,7 @@ function blankQuestion(): DraftQuestion {
     ],
     explanation: "",
     hint: "",
+    hintDelaySeconds: "0",
     difficulty: "medium",
     topics: "",
     status: "draft",
@@ -72,6 +74,7 @@ function toDraft(quiz: SavedQuiz): {
       answers: q.answers.map((a) => ({ text: a.text, correct: a.correct })),
       explanation: q.explanation,
       hint: q.hint,
+      hintDelaySeconds: String(q.hintDelaySeconds ?? 0),
       difficulty: q.difficulty,
       topics: q.topics.join(", "),
       status: q.status,
@@ -158,6 +161,14 @@ export default function QuizEditor({
             answers: [{ text: q.answers.find((answer) => answer.correct)?.text ?? "", correct: true }],
           };
         }
+        if (type === "essay") {
+          return {
+            ...q,
+            type,
+            answers: [],
+            timeLimit: String(Math.max(Number(q.timeLimit) || 20, 120)),
+          };
+        }
         if (q.answers.length < 2) {
           return {
             ...q,
@@ -219,6 +230,7 @@ export default function QuizEditor({
           answers: qq.answers.map((a) => ({ text: a.text, correct: a.correct })),
           explanation: qq.explanation,
           hint: qq.hint,
+          hintDelaySeconds: String(qq.hintDelaySeconds ?? 0),
           difficulty: qq.difficulty,
           topics: qq.topics.join(", "),
           status: qq.status,
@@ -252,6 +264,7 @@ export default function QuizEditor({
           .map((a) => ({ text: a.text.trim(), correct: a.correct })),
         explanation: q.explanation.trim(),
         hint: q.hint.trim(),
+        hintDelaySeconds: Number(q.hintDelaySeconds) || 0,
         difficulty: q.difficulty,
         topics: q.topics.split(",").map((topic) => topic.trim()).filter(Boolean),
         status: q.status,
@@ -387,6 +400,7 @@ export default function QuizEditor({
                 <option value="true_false">Đúng / Sai</option>
                 <option value="short_answer">Trả lời ngắn</option>
                 <option value="fill_blank">Điền khuyết</option>
+                <option value="essay">Tự luận</option>
               </select>
             </label>
             <label className="flex flex-col gap-1 text-xs font-semibold">
@@ -446,7 +460,7 @@ export default function QuizEditor({
             </label>
           </div>
 
-          <div className="flex flex-col gap-2">
+          {q.type !== "essay" ? <div className="flex flex-col gap-2">
             <span className="text-xs font-semibold text-white/80">
               Đáp án (
               {q.type === "multiple_choice"
@@ -494,7 +508,11 @@ export default function QuizEditor({
                 + Thêm đáp án
               </button>
             )}
-          </div>
+          </div> : (
+            <div className="rounded-2xl border border-sky-200/25 bg-sky-300/10 p-3 text-sm text-sky-50">
+              Sinh viên nhập bài tự luận dài. Hệ thống ghi nhận để giảng viên chấm sau, không tự tính đúng/sai.
+            </div>
+          )}
 
           <label className="flex flex-col gap-1 text-xs font-semibold">
             Chủ đề (phân cách bằng dấu phẩy)
@@ -512,6 +530,17 @@ export default function QuizEditor({
               value={q.hint}
               onChange={(e) => patchQuestion(qi, { hint: e.target.value })}
               placeholder="Hiện khi học sinh cần trợ giúp"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-xs font-semibold">
+            Mở gợi ý sau (giây, 0 = ngay lập tức)
+            <input
+              type="number"
+              min={0}
+              max={120}
+              className={INPUT}
+              value={q.hintDelaySeconds}
+              onChange={(e) => patchQuestion(qi, { hintDelaySeconds: e.target.value })}
             />
           </label>
           <label className="flex flex-col gap-1 text-xs font-semibold">
