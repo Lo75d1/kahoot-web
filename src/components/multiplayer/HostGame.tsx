@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import QRCode from "qrcode";
+import Image from "next/image";
 import type { Quiz } from "@/lib/types";
 import {
   answeredCount,
@@ -32,6 +34,7 @@ export default function HostGame({
   const [answered, setAnswered] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [qrCode, setQrCode] = useState<string>("");
 
   const revealedRef = useRef(false);
   const prevCountRef = useRef(0);
@@ -40,6 +43,18 @@ export default function HostGame({
 
   useEffect(() => {
     roomRef.current = room;
+  }, [room]);
+
+  useEffect(() => {
+    if (!room || room.status !== "lobby") return;
+    const joinUrl = new URL(window.location.origin);
+    joinUrl.searchParams.set("join", room.pin);
+    QRCode.toDataURL(joinUrl.toString(), {
+      width: 320,
+      margin: 2,
+      color: { dark: "#052e2b", light: "#ffffff" },
+      errorCorrectionLevel: "M",
+    }).then(setQrCode).catch(() => setQrCode(""));
   }, [room]);
 
   // Tạo phòng + đăng ký realtime (chỉ 1 lần).
@@ -164,6 +179,18 @@ export default function HostGame({
           <p className="text-6xl font-black tracking-[0.2em] text-amber-200">
             {room.pin}
           </p>
+          {qrCode && (
+            <div className="rounded-3xl bg-white p-3 shadow-xl">
+              <Image
+                src={qrCode}
+                width={224}
+                height={224}
+                alt={`Mã QR tham gia phòng ${room.pin}`}
+                className="h-56 w-56"
+                unoptimized
+              />
+            </div>
+          )}
           <p className="text-sm text-white/60">
             Vào <span className="font-semibold text-white">web này</span> → “Tham
             gia PIN” → nhập mã trên.

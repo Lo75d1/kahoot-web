@@ -85,6 +85,7 @@ export default function QuizApp() {
   const [authReady, setAuthReady] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [tagFilter, setTagFilter] = useState("all");
+  const [joinPin, setJoinPin] = useState("");
 
   // Chưa đăng nhập -> localStorage (khách). Đã đăng nhập -> Supabase (đề riêng).
   const store = user ? supabaseStore : localStore;
@@ -101,6 +102,19 @@ export default function QuizApp() {
       setAuthReady(true);
     });
     return () => sub.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const pin = new URLSearchParams(window.location.search)
+      .get("join")
+      ?.replace(/\D/g, "")
+      .slice(0, 6);
+    if (pin?.length === 6) {
+      window.setTimeout(() => {
+        setJoinPin(pin);
+        setMode("join");
+      }, 0);
+    }
   }, []);
 
   const refresh = useCallback(async () => {
@@ -217,7 +231,7 @@ export default function QuizApp() {
   }
 
   if (mode === "join") {
-    return <PlayerGame onExit={() => setMode("bank")} />;
+    return <PlayerGame initialPin={joinPin} onExit={() => setMode("bank")} />;
   }
 
   if (mode === "ai") {

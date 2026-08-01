@@ -14,12 +14,18 @@ import {
 import { sfx } from "@/lib/sound";
 import { GLASS, TILE, PlayerChips, Leaderboard } from "./mpUi";
 
-export default function PlayerGame({ onExit }: { onExit: () => void }) {
+export default function PlayerGame({
+  onExit,
+  initialPin = "",
+}: {
+  onExit: () => void;
+  initialPin?: string;
+}) {
   const [room, setRoom] = useState<Room | null>(null);
   const [me, setMe] = useState<Player | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
 
-  const [pin, setPin] = useState("");
+  const [pin, setPin] = useState(initialPin.replace(/\D/g, "").slice(0, 6));
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [joining, setJoining] = useState(false);
