@@ -4,6 +4,13 @@ import { checkRateLimit, requestClientKey } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 
+export async function GET() {
+  return Response.json({
+    configured: Boolean(process.env.OPENAI_API_KEY),
+    model: process.env.OPENAI_MODEL || "gpt-5.6-terra",
+  });
+}
+
 export async function POST(request: Request) {
   try {
     const clientKey = requestClientKey(request);

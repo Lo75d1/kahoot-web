@@ -146,3 +146,44 @@ export function parseCsv(text: string): Quiz {
 
   return parseQuiz({ title: "Bộ đề từ CSV", description: "", questions });
 }
+
+/**
+ * Nhận dạng nhanh định dạng đề Việt Nam phổ biến:
+ *   Câu 1. ... / 1) ...
+ *   A. ... B. ...
+ *   Đáp án: A
+ * Không thay thế AI, nhưng giúp tệp có cấu trúc rõ vẫn nhập được khi AI chưa bật.
+ */
+export function parseCommonQuizText(text: string): Quiz {
+  const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const questionPattern = /^(?:câu\s*)?(\d+)\s*[.):\-]\s*(.+)$/i;
+  const answerPattern = /^([A-H])\s*[.):\-]\s*(.+)$/i;
+  const keyPattern = /^(?:đáp\s*án|dap\s*an|answer|đ\/a)\s*[:.\-]?\s*([A-H])\b/i;
+  const starts: number[] = [];
+  lines.forEach((line, index) => { if (questionPattern.test(line)) starts.push(index); });
+  if (!starts.length) throw new Error("Không nhận ra các dòng bắt đầu bằng ‘Câu 1’, ‘1.’ hoặc ‘1)’.");
+
+  const questions = starts.map((start, index) => {
+    const end = starts[index + 1] ?? lines.length;
+    const questionMatch = lines[start].match(questionPattern);
+    const answers: Array<{ label: string; text: string; correct: boolean }> = [];
+    let correctLabel = "";
+    for (let cursor = start + 1; cursor < end; cursor++) {
+      const key = lines[cursor].match(keyPattern);
+      if (key) { correctLabel = key[1].toUpperCase(); continue; }
+      const answer = lines[cursor].match(answerPattern);
+      if (answer) answers.push({ label: answer[1].toUpperCase(), text: answer[2].trim(), correct: false });
+    }
+    answers.forEach((answer) => { answer.correct = answer.label === correctLabel; });
+    return {
+      text: questionMatch?.[2]?.trim() || lines[start],
+      timeLimit: DEFAULT_TIME,
+      points: DEFAULT_POINTS,
+      answers: answers.map(({ text: answerText, correct }) => ({ text: answerText, correct })),
+      status: "needs_review" as const,
+      origin: "imported" as const,
+      confidence: correctLabel ? 0.9 : 0.45,
+    };
+  });
+  return parseQuiz({ title: "Bộ đề nhập nhanh", description: "Tự nhận dạng từ tài liệu", questions });
+}

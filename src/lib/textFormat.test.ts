@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseCsv, parseMarkerText } from "./textFormat";
+import { parseCommonQuizText, parseCsv, parseMarkerText } from "./textFormat";
 
 describe("document import formats", () => {
   it("parses marker text", () => {
@@ -19,5 +19,24 @@ Thủ đô Việt Nam?
 
     expect(quiz.questions[0].text).toBe("2, cộng 2?");
     expect(quiz.questions[0].answers[0].correct).toBe(true);
+  });
+
+  it("recognizes a common Vietnamese exam layout", () => {
+    const quiz = parseCommonQuizText(`Câu 1. Thủ đô Việt Nam là gì?
+A. Hà Nội
+B. Huế
+C. Đà Nẵng
+Đáp án: A
+
+2) 2 + 2 bằng bao nhiêu?
+A) 3
+B) 4
+C) 5
+Đáp án B`);
+
+    expect(quiz.questions).toHaveLength(2);
+    expect(quiz.questions[0].answers[0].correct).toBe(true);
+    expect(quiz.questions[1].answers[1].correct).toBe(true);
+    expect(quiz.questions[0].status).toBe("needs_review");
   });
 });

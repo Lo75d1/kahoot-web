@@ -4,20 +4,16 @@ import { useCallback, useEffect, useState } from "react";
 import {
   BarChart3,
   BookOpen,
-  Bot,
   Brain,
   CheckCircle2,
   ClipboardCheck,
   Copy,
   Download,
   Edit3,
-  FileUp,
-  GraduationCap,
   LogIn,
   Plus,
   Presentation,
   Search,
-  ShieldCheck,
   Shuffle,
   Sparkles,
   Trash2,
@@ -40,12 +36,9 @@ import Player from "./Player";
 import QuizEditor from "./QuizEditor";
 import HostGame from "./multiplayer/HostGame";
 import PlayerGame from "./multiplayer/PlayerGame";
-import AiCreator from "./AiCreator";
 import AuthScreen from "./AuthScreen";
-import ImportText from "./ImportText";
+import SmartImportPanel from "./SmartImportPanel";
 import LearningDashboard from "./LearningDashboard";
-import ClassroomHub from "./ClassroomHub";
-import GovernanceHub from "./GovernanceHub";
 import {
   saveAssignmentAttempt,
   type Assignment,
@@ -58,12 +51,8 @@ type Mode =
   | "play"
   | "host"
   | "join"
-  | "ai"
   | "auth"
-  | "import"
-  | "history"
-  | "classes"
-  | "governance";
+  | "history";
 
 // Multiplayer cần Supabase (độc lập với đăng nhập).
 const cloud = isSupabaseConfigured;
@@ -240,14 +229,6 @@ export default function QuizApp() {
     return <PlayerGame initialPin={joinPin} onExit={() => setMode("bank")} />;
   }
 
-  if (mode === "ai") {
-    return <AiCreator onSave={handleSave} onCancel={() => setMode("bank")} />;
-  }
-
-  if (mode === "import") {
-    return <ImportText onSave={handleSave} onCancel={() => setMode("bank")} />;
-  }
-
   if (mode === "auth") {
     return (
       <AuthScreen
@@ -259,28 +240,6 @@ export default function QuizApp() {
 
   if (mode === "history") {
     return <LearningDashboard onBack={() => setMode("bank")} />;
-  }
-
-  if (mode === "governance" && user) {
-    return <GovernanceHub onBack={() => setMode("bank")} />;
-  }
-
-  if (mode === "classes" && user) {
-    return (
-      <ClassroomHub
-        userId={user.id}
-        quizzes={quizzes}
-        onPlayAssignment={async (assignment: Assignment) => {
-          const quiz = await supabaseStore.get(assignment.quiz_id);
-          if (!quiz) throw new Error("Không tìm thấy bộ đề của bài giao.");
-          setPlayMode(assignment.mode);
-          setActiveAssignment(assignment);
-          setPlayQuiz(quiz);
-          setMode("play");
-        }}
-        onBack={() => setMode("bank")}
-      />
-    );
   }
 
   if (mode === "editor") {
@@ -302,12 +261,12 @@ export default function QuizApp() {
             <Sparkles size={13} aria-hidden /> UDA Assessment Hub
           </p>
           <h1 className="max-w-xl text-4xl font-extrabold leading-[1.08] tracking-[-0.045em] text-[#212121] sm:text-5xl">
-            Hôm nay bạn muốn học gì?
+            Nhập đề bằng AI, nhanh hơn từ tài liệu gốc
           </h1>
           <p className="mt-3 text-xs font-extrabold uppercase tracking-[0.14em] text-[#018f41]">
             Đồ án đề xuất cho Trường Đại học Đông Á
           </p>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600 sm:text-base">Tạo đề từ tài liệu, tổ chức lớp học và biến mỗi lần ôn tập thành một phiên học hiệu quả.</p>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600 sm:text-base">Tải PDF, Word, ảnh hoặc dán văn bản — hệ thống tự nhận diện câu hỏi, đáp án và tạo bản nháp có cấu trúc để giảng viên duyệt.</p>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <span className="inline-block rounded-full border border-[#d6d7c8] bg-white/70 px-3 py-1 text-xs font-semibold text-slate-600">
               {user ? `Đã đồng bộ · ${user.email}` : "Lưu riêng trên thiết bị này"}
@@ -330,7 +289,14 @@ export default function QuizApp() {
               ))}
           </div>
         </div>
-        <div className="grid shrink-0 grid-cols-2 gap-2 rounded-3xl bg-[#018f41] p-3 shadow-xl sm:grid-cols-2">
+        <div className="rounded-3xl bg-[#018f41] p-5 text-white shadow-xl">
+          <p className="text-xs font-black uppercase tracking-[.18em] text-white/65">Quy trình nhanh</p>
+          <ol className="mt-4 space-y-3 text-sm font-bold">
+            <li className="flex gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-[#01823c]">1</span>Tải tài liệu hoặc dán nội dung</li>
+            <li className="flex gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-[#01823c]">2</span>AI phân tích câu hỏi và đáp án</li>
+            <li className="flex gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-[#01823c]">3</span>Duyệt nhanh rồi lưu bộ đề</li>
+          </ol>
+          <div className="mt-5 grid grid-cols-2 gap-2">
           {cloud && (
             <button
               onClick={() => setMode("join")}
@@ -340,18 +306,6 @@ export default function QuizApp() {
             </button>
           )}
           <button
-            onClick={() => setMode("ai")}
-            className="rounded-2xl bg-[#ef9b83] px-4 py-3 text-sm font-extrabold text-[#212121] transition hover:-translate-y-0.5 hover:bg-[#f5b7a5] active:scale-95"
-          >
-            <span className="inline-flex items-center justify-center gap-2"><Bot size={18} aria-hidden />Tạo bằng AI</span>
-          </button>
-          <button
-            onClick={() => setMode("import")}
-            className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-white/20 active:scale-95"
-          >
-            <span className="inline-flex items-center justify-center gap-2"><FileUp size={18} aria-hidden />Nhập tài liệu</span>
-          </button>
-          <button
             onClick={() => {
               setEditorInitial(null);
               setMode("editor");
@@ -360,8 +314,11 @@ export default function QuizApp() {
           >
             <span className="inline-flex items-center justify-center gap-2"><Plus size={18} aria-hidden />Tạo đề</span>
           </button>
+          </div>
         </div>
       </div>
+
+      <SmartImportPanel onSave={handleSave} />
 
       <section className="grid grid-cols-3 gap-3" aria-label="Tổng quan ngân hàng đề">
         {[
@@ -381,16 +338,6 @@ export default function QuizApp() {
         <button onClick={() => setMode("history")} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90 transition hover:bg-white/20">
           <BarChart3 size={17} aria-hidden /> Tiến độ học
         </button>
-        {user && cloud && (
-          <>
-            <button onClick={() => setMode("classes")} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90 transition hover:bg-white/20">
-              <GraduationCap size={18} aria-hidden /> Lớp học &amp; giao bài
-            </button>
-            <button onClick={() => setMode("governance")} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#ef9b83] bg-white px-4 py-2 text-sm font-extrabold text-[#01823c] shadow-sm transition hover:bg-[#fff3ef]">
-              <ShieldCheck size={18} aria-hidden /> Khảo thí UDA
-            </button>
-          </>
-        )}
         <button onClick={() => setShuffleOn((v) => !v)} aria-pressed={shuffleOn} className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition ${shuffleOn ? "border-[#ef9b83] bg-[#ef9b83] text-[#212121]" : "border-white/25 bg-white/10 text-white/90 hover:bg-white/20"}`}>
           <Shuffle size={17} aria-hidden /> Trộn câu: {shuffleOn ? "Bật" : "Tắt"}
         </button>

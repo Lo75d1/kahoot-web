@@ -15,18 +15,18 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://kahoot-web-pi.vercel.app"),
-  title: "UDA Assessment Hub — học tập và khảo thí thông minh",
+  title: "UDA Assessment Hub — AI nhập đề từ tài liệu",
   description:
-    "Biến tài liệu thành bộ câu hỏi có cấu trúc để học, ôn, thi và chơi trực tiếp.",
+    "Tải PDF, Word, ảnh hoặc dán văn bản để AI nhận diện câu hỏi, đáp án và tạo bộ đề có cấu trúc.",
   openGraph: {
-    title: "UDA Assessment Hub — Học tập và khảo thí thông minh",
-    description: "Tạo đề từ tài liệu, học, ôn, thi và tổ chức trò chơi trực tiếp.",
+    title: "UDA Assessment Hub — AI nhập đề từ tài liệu",
+    description: "Một ô tải tài liệu để AI nhận diện và chuẩn hóa bộ đề.",
     images: [{ url: "/og.png", width: 1200, height: 630, alt: "UDA Assessment Hub" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "UDA Assessment Hub — Học tập và khảo thí thông minh",
-    description: "Tạo đề từ tài liệu, học, ôn, thi và tổ chức trò chơi trực tiếp.",
+    title: "UDA Assessment Hub — AI nhập đề từ tài liệu",
+    description: "Một ô tải tài liệu để AI nhận diện và chuẩn hóa bộ đề.",
     images: ["/og.png"],
   },
 };
