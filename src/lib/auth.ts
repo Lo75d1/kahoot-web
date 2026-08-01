@@ -11,8 +11,17 @@ function sb() {
 }
 
 /** Đăng ký + báo có cần xác nhận email không. */
-export async function signUp(email: string, password: string) {
-  const { data, error } = await sb().auth.signUp({ email, password });
+export async function signUp(
+  email: string,
+  password: string,
+  requestedRole: "student" | "lecturer" = "lecturer",
+  fullName = "",
+) {
+  const { data, error } = await sb().auth.signUp({
+    email,
+    password,
+    options: { data: { requested_role: requestedRole, full_name: fullName.trim() } },
+  });
   if (error) throw error;
   return { user: data.user, needConfirm: !data.session };
 }

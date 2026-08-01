@@ -35,6 +35,8 @@ export default function AuthScreen({
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [requestedRole, setRequestedRole] = useState<"student" | "lecturer">("lecturer");
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -49,7 +51,12 @@ export default function AuthScreen({
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { needConfirm } = await signUp(email.trim(), password);
+        const { needConfirm } = await signUp(
+          email.trim(),
+          password,
+          requestedRole,
+          fullName,
+        );
         if (needConfirm) {
           setInfo(
             "Đã gửi email xác nhận. Mở email bấm xác nhận rồi quay lại đăng nhập.",
@@ -73,11 +80,36 @@ export default function AuthScreen({
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-5 p-6 text-white">
       <div className={`flex w-full flex-col gap-4 rounded-[2rem] p-8 ${GLASS}`}>
         <h1 className="text-center text-3xl font-black drop-shadow-sm">
-          {mode === "login" ? "Đăng nhập giáo viên" : "Tạo tài khoản giáo viên"}
+          {mode === "login" ? "Đăng nhập UDA" : "Tạo tài khoản UDA"}
         </h1>
         <p className="text-center text-sm text-white/70">
-          Đăng nhập để lưu &amp; quản lý đề của riêng bạn trên đám mây.
+          Đăng nhập bằng tài khoản UDA để học tập hoặc quản lý khảo thí theo quyền được cấp.
         </p>
+
+        {mode === "signup" && (
+          <>
+            <input
+              value={fullName}
+              onChange={(event) => setFullName(event.target.value.slice(0, 120))}
+              placeholder="Họ và tên"
+              autoComplete="name"
+              className={INPUT}
+            />
+            <div className="grid grid-cols-2 gap-2" role="group" aria-label="Loại tài khoản">
+              {(["lecturer", "student"] as const).map((role) => (
+                <button
+                  key={role}
+                  type="button"
+                  aria-pressed={requestedRole === role}
+                  onClick={() => setRequestedRole(role)}
+                  className={`rounded-xl border px-3 py-2 text-sm font-bold ${requestedRole === role ? "border-white bg-white text-[#01823c]" : "border-white/30 bg-white/10 text-white"}`}
+                >
+                  {role === "lecturer" ? "Giảng viên" : "Sinh viên"}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         <input
           type="email"

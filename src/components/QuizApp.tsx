@@ -17,6 +17,7 @@ import {
   Plus,
   Presentation,
   Search,
+  ShieldCheck,
   Shuffle,
   Sparkles,
   Trash2,
@@ -44,6 +45,7 @@ import AuthScreen from "./AuthScreen";
 import ImportText from "./ImportText";
 import LearningDashboard from "./LearningDashboard";
 import ClassroomHub from "./ClassroomHub";
+import GovernanceHub from "./GovernanceHub";
 import {
   saveAssignmentAttempt,
   type Assignment,
@@ -60,7 +62,8 @@ type Mode =
   | "auth"
   | "import"
   | "history"
-  | "classes";
+  | "classes"
+  | "governance";
 
 // Multiplayer cần Supabase (độc lập với đăng nhập).
 const cloud = isSupabaseConfigured;
@@ -258,6 +261,10 @@ export default function QuizApp() {
     return <LearningDashboard onBack={() => setMode("bank")} />;
   }
 
+  if (mode === "governance" && user) {
+    return <GovernanceHub onBack={() => setMode("bank")} />;
+  }
+
   if (mode === "classes" && user) {
     return (
       <ClassroomHub
@@ -318,7 +325,7 @@ export default function QuizApp() {
                   onClick={() => setMode("auth")}
                   className="text-xs font-bold text-emerald-800 underline underline-offset-4 hover:text-emerald-950"
                 >
-                  <span className="inline-flex items-center gap-1.5"><LogIn size={14} aria-hidden />Đăng nhập giáo viên</span>
+                  <span className="inline-flex items-center gap-1.5"><LogIn size={14} aria-hidden />Đăng nhập UDA</span>
                 </button>
               ))}
           </div>
@@ -375,9 +382,14 @@ export default function QuizApp() {
           <BarChart3 size={17} aria-hidden /> Tiến độ học
         </button>
         {user && cloud && (
-          <button onClick={() => setMode("classes")} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90 transition hover:bg-white/20">
-            <GraduationCap size={18} aria-hidden /> Lớp học &amp; giao bài
-          </button>
+          <>
+            <button onClick={() => setMode("classes")} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90 transition hover:bg-white/20">
+              <GraduationCap size={18} aria-hidden /> Lớp học &amp; giao bài
+            </button>
+            <button onClick={() => setMode("governance")} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#ef9b83] bg-white px-4 py-2 text-sm font-extrabold text-[#01823c] shadow-sm transition hover:bg-[#fff3ef]">
+              <ShieldCheck size={18} aria-hidden /> Khảo thí UDA
+            </button>
+          </>
         )}
         <button onClick={() => setShuffleOn((v) => !v)} aria-pressed={shuffleOn} className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition ${shuffleOn ? "border-[#ef9b83] bg-[#ef9b83] text-[#212121]" : "border-white/25 bg-white/10 text-white/90 hover:bg-white/20"}`}>
           <Shuffle size={17} aria-hidden /> Trộn câu: {shuffleOn ? "Bật" : "Tắt"}
