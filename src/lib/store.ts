@@ -5,6 +5,7 @@
 import type { Quiz } from "./types";
 import { parseQuiz } from "./parser";
 import sampleRaw from "@/data/sample-quiz.json";
+import sampleQuizzesRaw from "@/data/sample-quizzes.json";
 
 export interface SavedQuiz extends Quiz {
   id: string;
@@ -21,6 +22,7 @@ export interface QuizStore {
 
 const KEY = "quiz-bank-v1";
 const SEED_FLAG = "quiz-bank-seeded-v1";
+const SEED_PACK_FLAG = "quiz-bank-seeded-v2";
 
 function readAll(): SavedQuiz[] {
   if (typeof window === "undefined") return [];
@@ -75,13 +77,39 @@ export const localStore: QuizStore = {
 };
 
 /** Nạp đề mẫu lần đầu để ngân hàng không trống. Gọi một lần khi app mở. */
-export async function ensureSeeded(store: QuizStore = localStore) {
+export async function ensureSeeded(
+  store: QuizStore = localStore,
+  scope = "guest",
+) {
   if (typeof window === "undefined") return;
-  if (window.localStorage.getItem(SEED_FLAG)) return;
-  try {
-    await store.save(parseQuiz(sampleRaw));
-  } catch {
-    // bỏ qua nếu đề mẫu lỗi
+  const firstFlag = `${SEED_FLAG}:${scope}`;
+  const packFlag = `${SEED_PACK_FLAG}:${scope}`;
+  const existingTitles = new Set(
+    (await store.list()).map((quiz) => quiz.title.trim().toLocaleLowerCase("vi")),
+  );
+  if (!window.localStorage.getItem(firstFlag)) {
+    try {
+      const sample = parseQuiz(sampleRaw);
+      if (!existingTitles.has(sample.title.toLocaleLowerCase("vi"))) {
+        await store.save(sample);
+      }
+    } catch {
+      // bỏ qua nếu đề mẫu lỗi
+    }
+    window.localStorage.setItem(firstFlag, "1");
   }
-  window.localStorage.setItem(SEED_FLAG, "1");
+  if (!window.localStorage.getItem(packFlag)) {
+    for (const raw of sampleQuizzesRaw) {
+      try {
+        const sample = parseQuiz(raw);
+        if (!existingTitles.has(sample.title.toLocaleLowerCase("vi"))) {
+          await store.save(sample);
+          existingTitles.add(sample.title.toLocaleLowerCase("vi"));
+        }
+      } catch {
+        // một đề lỗi không chặn các đề mẫu còn lại
+      }
+    }
+    window.localStorage.setItem(packFlag, "1");
+  }
 }

@@ -117,10 +117,10 @@ export default function QuizApp() {
   useEffect(() => {
     if (!authReady) return;
     (async () => {
-      if (!user) await ensureSeeded(localStore);
+      await ensureSeeded(store, user?.id ?? "guest");
       await refresh();
     })();
-  }, [authReady, user, refresh]);
+  }, [authReady, user, store, refresh]);
 
   const doLogout = async () => {
     await signOut();
