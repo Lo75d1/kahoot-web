@@ -42,15 +42,14 @@ import AuthScreen from "./AuthScreen";
 import SmartImportPanel from "./SmartImportPanel";
 import ImportReview from "./ImportReview";
 import EssayGradingHub from "./EssayGradingHub";
+import InstitutionalHub from "./InstitutionalHub";
 import type { ImportQualityReport } from "@/lib/importContract";
 import { downloadCanvasQti } from "@/lib/qti";
 import { pendingSubmissionCount, saveSubmission } from "@/lib/submissions";
 import LearningDashboard from "./LearningDashboard";
-import {
-  saveAssignmentAttempt,
-  type Assignment,
-} from "@/lib/classroom";
+import { saveAssignmentAttempt, type Assignment } from "@/lib/classroom";
 import { saveAttempt, type LearningMode } from "@/lib/learning";
+import { examWindow, loadInstitutional } from "@/lib/institutional";
 
 type Mode =
   | "bank"
@@ -62,7 +61,8 @@ type Mode =
   | "auth"
   | "history"
   | "import_review"
-  | "grading";
+  | "grading"
+  | "institutional";
 
 // Multiplayer cần Supabase (độc lập với đăng nhập).
 const cloud = isSupabaseConfigured;
@@ -89,7 +89,10 @@ export default function QuizApp() {
   const [searchQuery, setSearchQuery] = useState("");
   const [tagFilter, setTagFilter] = useState("all");
   const [joinPin, setJoinPin] = useState("");
-  const [importCandidate, setImportCandidate] = useState<{ quiz: Quiz; report: ImportQualityReport } | null>(null);
+  const [importCandidate, setImportCandidate] = useState<{
+    quiz: Quiz;
+    report: ImportQualityReport;
+  } | null>(null);
   const [pendingGrades, setPendingGrades] = useState(0);
 
   // Chưa đăng nhập -> localStorage (khách). Đã đăng nhập -> Supabase (đề riêng).
@@ -108,7 +111,37 @@ export default function QuizApp() {
     });
     return () => sub.unsubscribe();
   }, []);
-  useEffect(() => { const sync=()=>setPendingGrades(pendingSubmissionCount()); sync(); window.addEventListener("uda-submissions",sync); return()=>window.removeEventListener("uda-submissions",sync); },[]);
+  useEffect(() => {
+    if (loading || !quizzes.length) return;
+    const timer = window.setTimeout(() => {
+      const params = new URLSearchParams(location.search);
+      const examId = params.get("exam"),
+        pin = params.get("pin");
+      if (!examId) return;
+      const exam = loadInstitutional().exams.find((item) => item.id === examId);
+      if (
+        !exam ||
+        exam.pin !== pin ||
+        exam.status !== "open" ||
+        examWindow(exam) !== "active"
+      ) {
+        flash("Phòng thi chưa mở, đã đóng hoặc mã PIN không đúng.");
+        return;
+      }
+      const quiz = quizzes.find((item) => item.id === exam.quizId);
+      if (quiz) {
+        setPlayQuiz(quiz);
+        setMode("form");
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [loading, quizzes]);
+  useEffect(() => {
+    const sync = () => setPendingGrades(pendingSubmissionCount());
+    sync();
+    window.addEventListener("uda-submissions", sync);
+    return () => window.removeEventListener("uda-submissions", sync);
+  }, []);
 
   useEffect(() => {
     const pin = new URLSearchParams(window.location.search)
@@ -190,16 +223,18 @@ export default function QuizApp() {
   };
 
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase("vi");
-  const allTags = Array.from(new Set(quizzes.flatMap((quiz) => quiz.tags))).sort(
-    (a, b) => a.localeCompare(b, "vi"),
-  );
+  const allTags = Array.from(
+    new Set(quizzes.flatMap((quiz) => quiz.tags)),
+  ).sort((a, b) => a.localeCompare(b, "vi"));
   const filteredQuizzes = quizzes.filter((quiz) => {
     const matchesSearch =
       !normalizedSearch ||
       `${quiz.title} ${quiz.description} ${quiz.tags.join(" ")}`
         .toLocaleLowerCase("vi")
         .includes(normalizedSearch);
-    return matchesSearch && (tagFilter === "all" || quiz.tags.includes(tagFilter));
+    return (
+      matchesSearch && (tagFilter === "all" || quiz.tags.includes(tagFilter))
+    );
   });
   const totalQuestionCount = quizzes.reduce(
     (sum, quiz) => sum + quiz.questions.length,
@@ -207,7 +242,9 @@ export default function QuizApp() {
   );
   const reviewCount = quizzes.reduce(
     (sum, quiz) =>
-      sum + quiz.questions.filter((question) => question.status === "needs_review").length,
+      sum +
+      quiz.questions.filter((question) => question.status === "needs_review")
+        .length,
     0,
   );
 
@@ -235,7 +272,17 @@ export default function QuizApp() {
   }
 
   if (mode === "form" && playQuiz) {
-    return <FormPlayer quiz={playQuiz} onExit={() => setMode("bank")} onComplete={(results, score, responses) => { saveAttempt(playQuiz, "exam", results, score); saveSubmission(playQuiz, responses, results); setPendingGrades(pendingSubmissionCount()); }} />;
+    return (
+      <FormPlayer
+        quiz={playQuiz}
+        onExit={() => setMode("bank")}
+        onComplete={(results, score, responses, studentCode) => {
+          saveAttempt(playQuiz, "exam", results, score);
+          saveSubmission(playQuiz, responses, results, studentCode);
+          setPendingGrades(pendingSubmissionCount());
+        }}
+      />
+    );
   }
 
   if (mode === "host" && hostQuiz) {
@@ -259,9 +306,27 @@ export default function QuizApp() {
     return <LearningDashboard onBack={() => setMode("bank")} />;
   }
 
-  if (mode === "grading") return <EssayGradingHub onBack={() => setMode("bank")} />;
+  if (mode === "grading")
+    return <EssayGradingHub onBack={() => setMode("bank")} />;
 
-  if (mode === "import_review" && importCandidate) return <ImportReview initialQuiz={importCandidate.quiz} initialReport={importCandidate.report} onBack={() => setMode("bank")} onSave={handleSave} />;
+  if (mode === "institutional")
+    return (
+      <InstitutionalHub
+        quizzes={quizzes}
+        onBack={() => setMode("bank")}
+        onOpenGrading={() => setMode("grading")}
+      />
+    );
+
+  if (mode === "import_review" && importCandidate)
+    return (
+      <ImportReview
+        initialQuiz={importCandidate.quiz}
+        initialReport={importCandidate.report}
+        onBack={() => setMode("bank")}
+        onSave={handleSave}
+      />
+    );
 
   if (mode === "editor") {
     return (
@@ -287,10 +352,16 @@ export default function QuizApp() {
           <p className="mt-3 text-xs font-extrabold uppercase tracking-[0.14em] text-[#018f41]">
             Đồ án đề xuất cho Trường Đại học Đông Á
           </p>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600 sm:text-base">Đưa tài liệu cho AI ngoài, nhận JSON chuẩn rồi để hệ thống chạy code nhập hàng loạt, báo lỗi và chuyển qua kiểm duyệt. API key cá nhân chỉ là tùy chọn.</p>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600 sm:text-base">
+            Đưa tài liệu cho AI ngoài, nhận JSON chuẩn rồi để hệ thống chạy code
+            nhập hàng loạt, báo lỗi và chuyển qua kiểm duyệt. API key cá nhân
+            chỉ là tùy chọn.
+          </p>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <span className="inline-block rounded-full border border-[#d6d7c8] bg-white/70 px-3 py-1 text-xs font-semibold text-slate-600">
-              {user ? `Đã đồng bộ · ${user.email}` : "Lưu riêng trên thiết bị này"}
+              {user
+                ? `Đã đồng bộ · ${user.email}`
+                : "Lưu riêng trên thiết bị này"}
             </span>
             {cloud &&
               (user ? (
@@ -305,49 +376,86 @@ export default function QuizApp() {
                   onClick={() => setMode("auth")}
                   className="text-xs font-bold text-emerald-800 underline underline-offset-4 hover:text-emerald-950"
                 >
-                  <span className="inline-flex items-center gap-1.5"><LogIn size={14} aria-hidden />Đăng nhập UDA</span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <LogIn size={14} aria-hidden />
+                    Đăng nhập UDA
+                  </span>
                 </button>
               ))}
           </div>
         </div>
         <div className="rounded-3xl bg-[#018f41] p-5 text-white shadow-xl">
-          <p className="text-xs font-black uppercase tracking-[.18em] text-white/65">Quy trình nhanh</p>
+          <p className="text-xs font-black uppercase tracking-[.18em] text-white/65">
+            Quy trình nhanh
+          </p>
           <ol className="mt-4 space-y-3 text-sm font-bold">
-            <li className="flex gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-[#01823c]">1</span>Tải tài liệu hoặc dán nội dung</li>
-            <li className="flex gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-[#01823c]">2</span>AI ngoài trả JSON bộ đề hoặc quy tắc</li>
-            <li className="flex gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-[#01823c]">3</span>Code kiểm tra rồi chuyển qua duyệt</li>
+            <li className="flex gap-3">
+              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-[#01823c]">
+                1
+              </span>
+              Tải tài liệu hoặc dán nội dung
+            </li>
+            <li className="flex gap-3">
+              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-[#01823c]">
+                2
+              </span>
+              AI ngoài trả JSON bộ đề hoặc quy tắc
+            </li>
+            <li className="flex gap-3">
+              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-[#01823c]">
+                3
+              </span>
+              Code kiểm tra rồi chuyển qua duyệt
+            </li>
           </ol>
           <div className="mt-5 grid grid-cols-2 gap-2">
-          {cloud && (
+            {cloud && (
+              <button
+                onClick={() => setMode("join")}
+                className="rounded-2xl bg-[#f58220] px-4 py-3 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-[#dc6d12] active:scale-95"
+              >
+                <span className="inline-flex items-center justify-center gap-2">
+                  <Users size={18} aria-hidden />
+                  Tham gia PIN
+                </span>
+              </button>
+            )}
             <button
-              onClick={() => setMode("join")}
-              className="rounded-2xl bg-[#f58220] px-4 py-3 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-[#dc6d12] active:scale-95"
+              onClick={() => {
+                setEditorInitial(null);
+                setMode("editor");
+              }}
+              className="rounded-2xl bg-white px-4 py-3 text-sm font-extrabold text-[#01823c] transition hover:-translate-y-0.5 hover:bg-[#f0f2f1] active:scale-95"
             >
-              <span className="inline-flex items-center justify-center gap-2"><Users size={18} aria-hidden />Tham gia PIN</span>
+              <span className="inline-flex items-center justify-center gap-2">
+                <Plus size={18} aria-hidden />
+                Tạo đề
+              </span>
             </button>
-          )}
-          <button
-            onClick={() => {
-              setEditorInitial(null);
-              setMode("editor");
-            }}
-            className="rounded-2xl bg-white px-4 py-3 text-sm font-extrabold text-[#01823c] transition hover:-translate-y-0.5 hover:bg-[#f0f2f1] active:scale-95"
-          >
-            <span className="inline-flex items-center justify-center gap-2"><Plus size={18} aria-hidden />Tạo đề</span>
-          </button>
           </div>
         </div>
       </div>
 
-      <SmartImportPanel onReview={(quiz, report) => { setImportCandidate({ quiz, report }); setMode("import_review"); }} />
+      <SmartImportPanel
+        onReview={(quiz, report) => {
+          setImportCandidate({ quiz, report });
+          setMode("import_review");
+        }}
+      />
 
-      <section className="grid grid-cols-3 gap-3" aria-label="Tổng quan ngân hàng đề">
+      <section
+        className="grid grid-cols-3 gap-3"
+        aria-label="Tổng quan ngân hàng đề"
+      >
         {[
           { Icon: BookOpen, value: quizzes.length, label: "Bộ đề" },
           { Icon: CheckCircle2, value: totalQuestionCount, label: "Câu hỏi" },
           { Icon: BarChart3, value: reviewCount, label: "Cần duyệt" },
         ].map(({ Icon, value, label }) => (
-          <div key={label} className="rounded-2xl border border-white/10 bg-white/10 p-3 text-white backdrop-blur-md sm:p-4">
+          <div
+            key={label}
+            className="rounded-2xl border border-white/10 bg-white/10 p-3 text-white backdrop-blur-md sm:p-4"
+          >
             <Icon size={20} className="mb-3 text-[#ef9b83]" aria-hidden />
             <p className="text-2xl font-extrabold">{value}</p>
             <p className="text-xs font-semibold text-white/65">{label}</p>
@@ -356,18 +464,44 @@ export default function QuizApp() {
       </section>
 
       <div className="flex flex-wrap gap-2">
-        <button onClick={() => setMode("grading")} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90 transition hover:bg-white/20">
-          <ClipboardCheck size={17} aria-hidden /> Chấm tự luận {pendingGrades > 0 && <span className="rounded-full bg-[#f58220] px-2 py-0.5 text-xs font-black text-white">{pendingGrades}</span>}
+        <button
+          disabled={loading}
+          onClick={() => setMode("institutional")}
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#f58220] px-4 py-2 text-sm font-extrabold text-white shadow-md transition hover:bg-[#dc6d12] disabled:opacity-40"
+        >
+          <Users size={17} aria-hidden /> Điều hành học phần
         </button>
-        <button onClick={() => setMode("history")} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90 transition hover:bg-white/20">
+        <button
+          onClick={() => setMode("grading")}
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90 transition hover:bg-white/20"
+        >
+          <ClipboardCheck size={17} aria-hidden /> Chấm tự luận{" "}
+          {pendingGrades > 0 && (
+            <span className="rounded-full bg-[#f58220] px-2 py-0.5 text-xs font-black text-white">
+              {pendingGrades}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setMode("history")}
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90 transition hover:bg-white/20"
+        >
           <BarChart3 size={17} aria-hidden /> Tiến độ học
         </button>
-        <button onClick={() => setShuffleOn((v) => !v)} aria-pressed={shuffleOn} className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition ${shuffleOn ? "border-[#ef9b83] bg-[#ef9b83] text-[#212121]" : "border-white/25 bg-white/10 text-white/90 hover:bg-white/20"}`}>
-          <Shuffle size={17} aria-hidden /> Trộn câu: {shuffleOn ? "Bật" : "Tắt"}
+        <button
+          onClick={() => setShuffleOn((v) => !v)}
+          aria-pressed={shuffleOn}
+          className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition ${shuffleOn ? "border-[#ef9b83] bg-[#ef9b83] text-[#212121]" : "border-white/25 bg-white/10 text-white/90 hover:bg-white/20"}`}
+        >
+          <Shuffle size={17} aria-hidden /> Trộn câu:{" "}
+          {shuffleOn ? "Bật" : "Tắt"}
         </button>
       </div>
 
-      <div className={`hidden rounded-[1.5rem] p-4 ${GLASS}`} aria-hidden="true">
+      <div
+        className={`hidden rounded-[1.5rem] p-4 ${GLASS}`}
+        aria-hidden="true"
+      >
         <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.16em] text-slate-500">
           Cách sử dụng bộ đề
         </p>
@@ -375,7 +509,11 @@ export default function QuizApp() {
           {[
             { value: "learn" as LearningMode, label: "Học", Icon: BookOpen },
             { value: "practice" as LearningMode, label: "Ôn", Icon: Brain },
-            { value: "exam" as LearningMode, label: "Thi", Icon: ClipboardCheck },
+            {
+              value: "exam" as LearningMode,
+              label: "Thi",
+              Icon: ClipboardCheck,
+            },
           ].map(({ value, label, Icon }) => (
             <button
               key={value}
@@ -386,24 +524,47 @@ export default function QuizApp() {
                   : "border-[#dfe3d5] bg-white text-slate-600 hover:border-[#aeb8a8] hover:text-slate-900"
               }`}
             >
-              <span className="inline-flex items-center justify-center gap-2"><Icon size={17} aria-hidden />{label}</span>
+              <span className="inline-flex items-center justify-center gap-2">
+                <Icon size={17} aria-hidden />
+                {label}
+              </span>
             </button>
           ))}
         </div>
       </div>
 
-      <section className="rounded-[1.5rem] border border-white/10 bg-white/10 p-3 backdrop-blur-md" aria-label="Tìm và lọc bộ đề">
+      <section
+        className="rounded-[1.5rem] border border-white/10 bg-white/10 p-3 backdrop-blur-md"
+        aria-label="Tìm và lọc bộ đề"
+      >
         <div className="grid gap-2 sm:grid-cols-[1fr_220px]">
           <label className="relative block">
-            <Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" aria-hidden />
+            <Search
+              size={18}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+              aria-hidden
+            />
             <span className="sr-only">Tìm bộ đề</span>
-            <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Tìm theo tên, mô tả hoặc chủ đề…" className="min-h-12 w-full rounded-xl border border-transparent bg-white pl-10 pr-4 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-[#f58220]" />
+            <input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Tìm theo tên, mô tả hoặc chủ đề…"
+              className="min-h-12 w-full rounded-xl border border-transparent bg-white pl-10 pr-4 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-[#f58220]"
+            />
           </label>
           <label>
             <span className="sr-only">Lọc theo chủ đề</span>
-            <select value={tagFilter} onChange={(event) => setTagFilter(event.target.value)} className="min-h-12 w-full rounded-xl border border-transparent bg-white px-3 text-sm font-semibold text-slate-700 focus:border-[#f58220]">
+            <select
+              value={tagFilter}
+              onChange={(event) => setTagFilter(event.target.value)}
+              className="min-h-12 w-full rounded-xl border border-transparent bg-white px-3 text-sm font-semibold text-slate-700 focus:border-[#f58220]"
+            >
               <option value="all">Tất cả chủ đề</option>
-              {allTags.map((tag) => <option key={tag} value={tag}>{tag}</option>)}
+              {allTags.map((tag) => (
+                <option key={tag} value={tag}>
+                  {tag}
+                </option>
+              ))}
             </select>
           </label>
         </div>
@@ -427,10 +588,22 @@ export default function QuizApp() {
           </button>
         </div>
       ) : filteredQuizzes.length === 0 ? (
-        <div className={`flex flex-col items-center gap-3 rounded-3xl p-8 text-center ${GLASS}`}>
+        <div
+          className={`flex flex-col items-center gap-3 rounded-3xl p-8 text-center ${GLASS}`}
+        >
           <Search size={28} className="text-slate-400" aria-hidden />
-          <p className="font-bold text-slate-800">Không tìm thấy bộ đề phù hợp</p>
-          <button onClick={() => { setSearchQuery(""); setTagFilter("all"); }} className="text-sm font-semibold text-emerald-800 underline underline-offset-4">Xóa bộ lọc</button>
+          <p className="font-bold text-slate-800">
+            Không tìm thấy bộ đề phù hợp
+          </p>
+          <button
+            onClick={() => {
+              setSearchQuery("");
+              setTagFilter("all");
+            }}
+            className="text-sm font-semibold text-emerald-800 underline underline-offset-4"
+          >
+            Xóa bộ lọc
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -440,16 +613,22 @@ export default function QuizApp() {
               className={`flex flex-col gap-4 rounded-[1.75rem] p-5 transition hover:-translate-y-1 hover:shadow-[0_18px_44px_rgba(2,18,13,0.2)] ${GLASS}`}
             >
               <div>
-                <h2 className="text-xl font-extrabold tracking-[-0.025em] text-[#01823c]">{q.title}</h2>
+                <h2 className="text-xl font-extrabold tracking-[-0.025em] text-[#01823c]">
+                  {q.title}
+                </h2>
                 {q.description && (
-                  <p className="mt-1 text-sm leading-6 text-slate-600">{q.description}</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">
+                    {q.description}
+                  </p>
                 )}
                 <p className="mt-2 text-xs font-semibold text-slate-500">
                   {q.questions.length} câu hỏi ·{" "}
                   {formatDuration(totalSeconds(q))}
                 </p>
                 {(q.tags.length > 0 ||
-                  q.questions.some((question) => question.status === "needs_review")) && (
+                  q.questions.some(
+                    (question) => question.status === "needs_review",
+                  )) && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {q.tags.slice(0, 4).map((tag) => (
                       <span
@@ -476,7 +655,10 @@ export default function QuizApp() {
                   onClick={() => setLaunchQuiz(q)}
                   className="flex-1 rounded-xl bg-[#018f41] px-4 py-2.5 font-extrabold text-white shadow-md transition hover:bg-[#01823c] active:scale-95"
                 >
-                  <span className="inline-flex items-center justify-center gap-2"><Presentation size={17} aria-hidden />Bắt đầu</span>
+                  <span className="inline-flex items-center justify-center gap-2">
+                    <Presentation size={17} aria-hidden />
+                    Bắt đầu
+                  </span>
                 </button>
                 <button
                   onClick={() => {
@@ -485,7 +667,10 @@ export default function QuizApp() {
                   }}
                   className="rounded-xl border border-[#d6dcd1] bg-white px-4 py-2 font-semibold text-slate-700 transition hover:border-[#9ba99d] hover:bg-[#f5f6f0]"
                 >
-                  <span className="inline-flex items-center gap-2"><Edit3 size={16} aria-hidden />Sửa</span>
+                  <span className="inline-flex items-center gap-2">
+                    <Edit3 size={16} aria-hidden />
+                    Sửa
+                  </span>
                 </button>
                 <button
                   onClick={() => handleDelete(q)}
@@ -505,26 +690,42 @@ export default function QuizApp() {
                     }}
                     className="rounded-lg border border-amber-300 bg-amber-100 px-3 py-1.5 font-semibold text-amber-900 transition hover:bg-amber-200"
                   >
-                    <span className="inline-flex items-center gap-2"><Users size={16} aria-hidden />Chủ trì live</span>
+                    <span className="inline-flex items-center gap-2">
+                      <Users size={16} aria-hidden />
+                      Chủ trì live
+                    </span>
                   </button>
                 )}
                 <button
                   onClick={() => handleDuplicate(q)}
                   className="rounded-lg border border-[#dfe3d5] bg-[#f2f3eb] px-3 py-1.5 font-semibold text-slate-600 transition hover:bg-[#e7eadf] hover:text-slate-900"
                 >
-                  <span className="inline-flex items-center gap-2"><Copy size={15} aria-hidden />Nhân bản</span>
+                  <span className="inline-flex items-center gap-2">
+                    <Copy size={15} aria-hidden />
+                    Nhân bản
+                  </span>
                 </button>
                 <button
                   onClick={() => handleExport(q)}
                   className="rounded-lg border border-[#dfe3d5] bg-[#f2f3eb] px-3 py-1.5 font-semibold text-slate-600 transition hover:bg-[#e7eadf] hover:text-slate-900"
                 >
-                  <span className="inline-flex items-center gap-2"><Download size={15} aria-hidden />Xuất JSON</span>
+                  <span className="inline-flex items-center gap-2">
+                    <Download size={15} aria-hidden />
+                    Xuất JSON
+                  </span>
                 </button>
                 <button
-                  onClick={() => downloadCanvasQti(q).then(() => flash("Đã xuất gói Canvas QTI ✓"))}
+                  onClick={() =>
+                    downloadCanvasQti(q).then(() =>
+                      flash("Đã xuất gói Canvas QTI ✓"),
+                    )
+                  }
                   className="rounded-lg border border-[#dfe3d5] bg-[#f2f3eb] px-3 py-1.5 font-semibold text-slate-600 transition hover:bg-[#e7eadf] hover:text-slate-900"
                 >
-                  <span className="inline-flex items-center gap-2"><Download size={15} aria-hidden />Canvas QTI</span>
+                  <span className="inline-flex items-center gap-2">
+                    <Download size={15} aria-hidden />
+                    Canvas QTI
+                  </span>
                 </button>
               </div>
             </div>
@@ -547,15 +748,38 @@ export default function QuizApp() {
             <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-emerald-700">
               Bắt đầu bộ đề
             </p>
-            <h2 id="launch-title" className="mt-2 text-2xl font-black text-[#01823c]">
+            <h2
+              id="launch-title"
+              className="mt-2 text-2xl font-black text-[#01823c]"
+            >
               Bạn muốn học theo cách nào?
             </h2>
-            <p className="mt-1 line-clamp-2 text-sm text-slate-500">{launchQuiz.title}</p>
+            <p className="mt-1 line-clamp-2 text-sm text-slate-500">
+              {launchQuiz.title}
+            </p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               {[
-                { mode: "learn" as LearningMode, title: "Học", detail: "Có gợi ý, đáp án và lời giải ngay", Icon: BookOpen, tone: "border-emerald-200 bg-emerald-50 text-emerald-900" },
-                { mode: "practice" as LearningMode, title: "Ôn tập", detail: "Luyện nhanh, phản hồi và tính điểm", Icon: Brain, tone: "border-sky-200 bg-sky-50 text-sky-900" },
-                { mode: "exam" as LearningMode, title: "Làm bài thi", detail: "Không gợi ý, xem kết quả khi nộp", Icon: ClipboardCheck, tone: "border-violet-200 bg-violet-50 text-violet-900" },
+                {
+                  mode: "learn" as LearningMode,
+                  title: "Học",
+                  detail: "Có gợi ý, đáp án và lời giải ngay",
+                  Icon: BookOpen,
+                  tone: "border-emerald-200 bg-emerald-50 text-emerald-900",
+                },
+                {
+                  mode: "practice" as LearningMode,
+                  title: "Ôn tập",
+                  detail: "Luyện nhanh, phản hồi và tính điểm",
+                  Icon: Brain,
+                  tone: "border-sky-200 bg-sky-50 text-sky-900",
+                },
+                {
+                  mode: "exam" as LearningMode,
+                  title: "Làm bài thi",
+                  detail: "Không gợi ý, xem kết quả khi nộp",
+                  Icon: ClipboardCheck,
+                  tone: "border-violet-200 bg-violet-50 text-violet-900",
+                },
               ].map(({ mode: selectedMode, title, detail, Icon, tone }) => (
                 <button
                   key={selectedMode}
@@ -565,11 +789,28 @@ export default function QuizApp() {
                   <Icon size={24} aria-hidden className="mt-0.5 shrink-0" />
                   <span>
                     <strong className="block text-base">{title}</strong>
-                    <span className="mt-1 block text-xs leading-5 opacity-75">{detail}</span>
+                    <span className="mt-1 block text-xs leading-5 opacity-75">
+                      {detail}
+                    </span>
                   </span>
                 </button>
               ))}
-              <button onClick={() => { setPlayQuiz(shuffleOn ? shuffleQuiz(launchQuiz) : launchQuiz); setLaunchQuiz(null); setMode("form"); }} className="flex min-h-24 items-start gap-3 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-left text-sky-950 transition hover:-translate-y-0.5 hover:shadow-md"><FileText size={24} aria-hidden className="mt-0.5 shrink-0"/><span><strong className="block text-base">Biểu mẫu</strong><span className="mt-1 block text-xs leading-5 opacity-75">Hiển thị toàn bộ câu như Google Forms, có tự luận</span></span></button>
+              <button
+                onClick={() => {
+                  setPlayQuiz(shuffleOn ? shuffleQuiz(launchQuiz) : launchQuiz);
+                  setLaunchQuiz(null);
+                  setMode("form");
+                }}
+                className="flex min-h-24 items-start gap-3 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-left text-sky-950 transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <FileText size={24} aria-hidden className="mt-0.5 shrink-0" />
+                <span>
+                  <strong className="block text-base">Biểu mẫu</strong>
+                  <span className="mt-1 block text-xs leading-5 opacity-75">
+                    Hiển thị toàn bộ câu như Google Forms, có tự luận
+                  </span>
+                </span>
+              </button>
               {cloud && (
                 <button
                   onClick={() => {
@@ -582,7 +823,9 @@ export default function QuizApp() {
                   <Users size={24} aria-hidden className="mt-0.5 shrink-0" />
                   <span>
                     <strong className="block text-base">Chủ trì live</strong>
-                    <span className="mt-1 block text-xs leading-5 opacity-75">Hiện PIN và QR để cả lớp tham gia</span>
+                    <span className="mt-1 block text-xs leading-5 opacity-75">
+                      Hiện PIN và QR để cả lớp tham gia
+                    </span>
                   </span>
                 </button>
               )}
