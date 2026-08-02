@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { parseQuiz, QuizParseError } from "./parser";
 
 describe("parseQuiz", () => {
@@ -104,5 +106,14 @@ describe("parseQuiz", () => {
       answers: [],
       hintDelaySeconds: 45,
     });
+  });
+
+  it("accepts the public Gemini tutorial sample", () => {
+    const raw = JSON.parse(readFileSync(join(process.cwd(), "public", "samples", "ket-qua-gemini-mau.json"), "utf8"));
+    const quiz = parseQuiz(raw);
+
+    expect(quiz.questions).toHaveLength(4);
+    expect(quiz.questions.map((question) => question.type)).toContain("essay");
+    expect(quiz.questions.some((question) => question.hintDelaySeconds === 30)).toBe(true);
   });
 });

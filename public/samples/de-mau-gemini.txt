@@ -1,0 +1,31 @@
+CHỦ ĐỀ: Kỹ năng sử dụng AI có trách nhiệm cho sinh viên
+
+Câu 1. Khi dùng AI để hỗ trợ làm bài, việc nào phù hợp nhất?
+A. Sao chép toàn bộ câu trả lời và nộp ngay
+B. Kiểm tra thông tin, viết lại bằng hiểu biết của mình và ghi nguồn khi cần
+C. Chia sẻ tài khoản cho bạn bè
+D. Nhập dữ liệu cá nhân nhạy cảm để AI hiểu rõ hơn
+Đáp án: B
+Giải thích: AI chỉ là công cụ hỗ trợ; người học vẫn chịu trách nhiệm kiểm chứng và trình bày trung thực.
+
+Câu 2. Thông tin nào không nên đưa vào một chatbot AI công khai?
+A. Một câu hỏi kiến thức phổ thông
+B. Nội dung đã được công bố công khai
+C. Mật khẩu, mã OTP hoặc hồ sơ cá nhân chưa được phép chia sẻ
+D. Một đoạn văn do chính bạn viết để xin góp ý
+Đáp án: C
+Giải thích: Dữ liệu bí mật và dữ liệu cá nhân nhạy cảm cần được bảo vệ.
+
+Câu 3. AI có thể tạo ra thông tin nghe hợp lý nhưng không chính xác.
+A. Đúng
+B. Sai
+Đáp án: A
+Giải thích: Hiện tượng này thường được gọi là ảo giác AI, vì vậy cần đối chiếu nguồn.
+
+Câu 4. Hãy nêu hai bước cần làm trước khi sử dụng thông tin do AI tạo ra trong một bài học thuật.
+Loại câu: Tự luận
+Gợi ý sau 30 giây: Kiểm tra nguồn và xem lại quy định liêm chính học thuật.
+
+Câu 5. Điền từ còn thiếu: Người dùng phải ______ thông tin quan trọng do AI cung cấp.
+Đáp án: kiểm chứng
+Giải thích: Không nên xem câu trả lời của AI là nguồn đúng tuyệt đối.

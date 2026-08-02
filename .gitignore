@@ -16,6 +16,8 @@
 # next.js
 /.next/
 /out/
+/video-tutorial/node_modules/
+/video-tutorial/out/
 
 # production
 /build

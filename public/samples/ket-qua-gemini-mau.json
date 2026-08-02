@@ -1,0 +1,80 @@
+{
+  "title": "Kỹ năng sử dụng AI có trách nhiệm",
+  "description": "Đề mẫu gồm trắc nghiệm, đúng sai, điền khuyết và tự luận.",
+  "version": 1,
+  "tags": ["Kỹ năng số", "AI", "Đề mẫu Gemini"],
+  "questions": [
+    {
+      "type": "single_choice",
+      "text": "Khi dùng AI để hỗ trợ làm bài, việc nào phù hợp nhất?",
+      "timeLimit": 30,
+      "points": 1000,
+      "answers": [
+        { "text": "Sao chép toàn bộ câu trả lời và nộp ngay", "correct": false },
+        { "text": "Kiểm tra thông tin, viết lại bằng hiểu biết của mình và ghi nguồn khi cần", "correct": true },
+        { "text": "Chia sẻ tài khoản cho bạn bè", "correct": false },
+        { "text": "Nhập dữ liệu cá nhân nhạy cảm để AI hiểu rõ hơn", "correct": false }
+      ],
+      "explanation": "AI chỉ là công cụ hỗ trợ; người học vẫn chịu trách nhiệm kiểm chứng và trình bày trung thực.",
+      "hint": "Nghĩ đến trách nhiệm của người nộp bài.",
+      "hintDelaySeconds": 15,
+      "difficulty": "easy",
+      "topics": ["Liêm chính học thuật"],
+      "status": "approved",
+      "origin": "ai_generated",
+      "confidence": 0.95,
+      "sourceRefs": ["Tài liệu mẫu Gemini"]
+    },
+    {
+      "type": "true_false",
+      "text": "AI có thể tạo ra thông tin nghe hợp lý nhưng không chính xác.",
+      "timeLimit": 20,
+      "points": 800,
+      "answers": [
+        { "text": "Đúng", "correct": true },
+        { "text": "Sai", "correct": false }
+      ],
+      "explanation": "Vì AI có thể tạo thông tin sai nên cần đối chiếu nguồn.",
+      "hint": "Đây thường được gọi là ảo giác AI.",
+      "hintDelaySeconds": 10,
+      "difficulty": "easy",
+      "topics": ["Kiểm chứng"],
+      "status": "approved",
+      "origin": "ai_generated",
+      "confidence": 0.98,
+      "sourceRefs": ["Tài liệu mẫu Gemini"]
+    },
+    {
+      "type": "essay",
+      "text": "Hãy nêu hai bước cần làm trước khi sử dụng thông tin do AI tạo ra trong một bài học thuật.",
+      "timeLimit": 120,
+      "points": 1500,
+      "answers": [],
+      "explanation": "Giảng viên chấm dựa trên lập luận về kiểm tra nguồn và liêm chính học thuật.",
+      "hint": "Kiểm tra nguồn và xem lại quy định liêm chính học thuật.",
+      "hintDelaySeconds": 30,
+      "difficulty": "medium",
+      "topics": ["Liêm chính học thuật"],
+      "status": "needs_review",
+      "origin": "ai_generated",
+      "confidence": 0.9,
+      "sourceRefs": ["Tài liệu mẫu Gemini"]
+    },
+    {
+      "type": "fill_blank",
+      "text": "Điền từ còn thiếu: Người dùng phải ______ thông tin quan trọng do AI cung cấp.",
+      "timeLimit": 30,
+      "points": 1000,
+      "answers": [{ "text": "kiểm chứng", "correct": true }],
+      "explanation": "Không nên xem câu trả lời của AI là nguồn đúng tuyệt đối.",
+      "hint": "Hai từ: kiểm tra và xác minh.",
+      "hintDelaySeconds": 15,
+      "difficulty": "easy",
+      "topics": ["Kiểm chứng"],
+      "status": "approved",
+      "origin": "ai_generated",
+      "confidence": 0.96,
+      "sourceRefs": ["Tài liệu mẫu Gemini"]
+    }
+  ]
+}
