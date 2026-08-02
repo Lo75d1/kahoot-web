@@ -10,6 +10,19 @@ export interface ExtractedDocument {
   truncated: boolean;
 }
 
+async function ensurePdfServerGlobals() {
+  const scope = globalThis as unknown as {
+    DOMMatrix?: unknown;
+    ImageData?: unknown;
+    Path2D?: unknown;
+  };
+  if (scope.DOMMatrix && scope.ImageData && scope.Path2D) return;
+  const canvas = await import("@napi-rs/canvas");
+  scope.DOMMatrix ??= canvas.DOMMatrix;
+  scope.ImageData ??= canvas.ImageData;
+  scope.Path2D ??= canvas.Path2D;
+}
+
 export async function extractDocument(file: File): Promise<ExtractedDocument> {
   if (file.size === 0) throw new Error("Tệp trống.");
   if (file.size > MAX_BYTES) throw new Error("Tệp vượt quá giới hạn 12 MB.");
@@ -21,6 +34,7 @@ export async function extractDocument(file: File): Promise<ExtractedDocument> {
   let pages: number | undefined;
 
   if (name.endsWith(".pdf") || file.type === "application/pdf") {
+    await ensurePdfServerGlobals();
     const { PDFParse } = await import("pdf-parse");
     const parser = new PDFParse({ data: bytes });
     try {
