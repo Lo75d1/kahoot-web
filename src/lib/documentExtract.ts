@@ -36,6 +36,8 @@ export async function extractDocument(file: File): Promise<ExtractedDocument> {
   if (name.endsWith(".pdf") || file.type === "application/pdf") {
     await ensurePdfServerGlobals();
     const { PDFParse } = await import("pdf-parse");
+    const { getPath } = await import("pdf-parse/worker");
+    PDFParse.setWorker(getPath());
     const parser = new PDFParse({ data: bytes });
     try {
       const result = await parser.getText({
