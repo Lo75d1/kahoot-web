@@ -40,6 +40,11 @@ import HostGame from "./multiplayer/HostGame";
 import PlayerGame from "./multiplayer/PlayerGame";
 import AuthScreen from "./AuthScreen";
 import SmartImportPanel from "./SmartImportPanel";
+import ImportReview from "./ImportReview";
+import EssayGradingHub from "./EssayGradingHub";
+import type { ImportQualityReport } from "@/lib/importContract";
+import { downloadCanvasQti } from "@/lib/qti";
+import { pendingSubmissionCount, saveSubmission } from "@/lib/submissions";
 import LearningDashboard from "./LearningDashboard";
 import {
   saveAssignmentAttempt,
@@ -55,7 +60,9 @@ type Mode =
   | "host"
   | "join"
   | "auth"
-  | "history";
+  | "history"
+  | "import_review"
+  | "grading";
 
 // Multiplayer cần Supabase (độc lập với đăng nhập).
 const cloud = isSupabaseConfigured;
@@ -82,6 +89,8 @@ export default function QuizApp() {
   const [searchQuery, setSearchQuery] = useState("");
   const [tagFilter, setTagFilter] = useState("all");
   const [joinPin, setJoinPin] = useState("");
+  const [importCandidate, setImportCandidate] = useState<{ quiz: Quiz; report: ImportQualityReport } | null>(null);
+  const [pendingGrades, setPendingGrades] = useState(0);
 
   // Chưa đăng nhập -> localStorage (khách). Đã đăng nhập -> Supabase (đề riêng).
   const store = user ? supabaseStore : localStore;
@@ -99,6 +108,7 @@ export default function QuizApp() {
     });
     return () => sub.unsubscribe();
   }, []);
+  useEffect(() => { const sync=()=>setPendingGrades(pendingSubmissionCount()); sync(); window.addEventListener("uda-submissions",sync); return()=>window.removeEventListener("uda-submissions",sync); },[]);
 
   useEffect(() => {
     const pin = new URLSearchParams(window.location.search)
@@ -225,7 +235,7 @@ export default function QuizApp() {
   }
 
   if (mode === "form" && playQuiz) {
-    return <FormPlayer quiz={playQuiz} onExit={() => setMode("bank")} onComplete={(results, score) => saveAttempt(playQuiz, "exam", results, score)} />;
+    return <FormPlayer quiz={playQuiz} onExit={() => setMode("bank")} onComplete={(results, score, responses) => { saveAttempt(playQuiz, "exam", results, score); saveSubmission(playQuiz, responses, results); setPendingGrades(pendingSubmissionCount()); }} />;
   }
 
   if (mode === "host" && hostQuiz) {
@@ -248,6 +258,10 @@ export default function QuizApp() {
   if (mode === "history") {
     return <LearningDashboard onBack={() => setMode("bank")} />;
   }
+
+  if (mode === "grading") return <EssayGradingHub onBack={() => setMode("bank")} />;
+
+  if (mode === "import_review" && importCandidate) return <ImportReview initialQuiz={importCandidate.quiz} initialReport={importCandidate.report} onBack={() => setMode("bank")} onSave={handleSave} />;
 
   if (mode === "editor") {
     return (
@@ -273,7 +287,7 @@ export default function QuizApp() {
           <p className="mt-3 text-xs font-extrabold uppercase tracking-[0.14em] text-[#018f41]">
             Đồ án đề xuất cho Trường Đại học Đông Á
           </p>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600 sm:text-base">Đưa tài liệu cho AI ngoài hoặc AI local của trường, nhận JSON quy tắc rồi để hệ thống chạy code nhập hàng loạt. API key cá nhân chỉ là tùy chọn.</p>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600 sm:text-base">Đưa tài liệu cho AI ngoài, nhận JSON chuẩn rồi để hệ thống chạy code nhập hàng loạt, báo lỗi và chuyển qua kiểm duyệt. API key cá nhân chỉ là tùy chọn.</p>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <span className="inline-block rounded-full border border-[#d6d7c8] bg-white/70 px-3 py-1 text-xs font-semibold text-slate-600">
               {user ? `Đã đồng bộ · ${user.email}` : "Lưu riêng trên thiết bị này"}
@@ -300,8 +314,8 @@ export default function QuizApp() {
           <p className="text-xs font-black uppercase tracking-[.18em] text-white/65">Quy trình nhanh</p>
           <ol className="mt-4 space-y-3 text-sm font-bold">
             <li className="flex gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-[#01823c]">1</span>Tải tài liệu hoặc dán nội dung</li>
-            <li className="flex gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-[#01823c]">2</span>AI ngoài trả JSON quy tắc</li>
-            <li className="flex gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-[#01823c]">3</span>Code tách đề và tạo bản nháp</li>
+            <li className="flex gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-[#01823c]">2</span>AI ngoài trả JSON bộ đề hoặc quy tắc</li>
+            <li className="flex gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-[#01823c]">3</span>Code kiểm tra rồi chuyển qua duyệt</li>
           </ol>
           <div className="mt-5 grid grid-cols-2 gap-2">
           {cloud && (
@@ -325,7 +339,7 @@ export default function QuizApp() {
         </div>
       </div>
 
-      <SmartImportPanel onSave={handleSave} />
+      <SmartImportPanel onReview={(quiz, report) => { setImportCandidate({ quiz, report }); setMode("import_review"); }} />
 
       <section className="grid grid-cols-3 gap-3" aria-label="Tổng quan ngân hàng đề">
         {[
@@ -342,6 +356,9 @@ export default function QuizApp() {
       </section>
 
       <div className="flex flex-wrap gap-2">
+        <button onClick={() => setMode("grading")} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90 transition hover:bg-white/20">
+          <ClipboardCheck size={17} aria-hidden /> Chấm tự luận {pendingGrades > 0 && <span className="rounded-full bg-[#f58220] px-2 py-0.5 text-xs font-black text-white">{pendingGrades}</span>}
+        </button>
         <button onClick={() => setMode("history")} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90 transition hover:bg-white/20">
           <BarChart3 size={17} aria-hidden /> Tiến độ học
         </button>
@@ -502,6 +519,12 @@ export default function QuizApp() {
                   className="rounded-lg border border-[#dfe3d5] bg-[#f2f3eb] px-3 py-1.5 font-semibold text-slate-600 transition hover:bg-[#e7eadf] hover:text-slate-900"
                 >
                   <span className="inline-flex items-center gap-2"><Download size={15} aria-hidden />Xuất JSON</span>
+                </button>
+                <button
+                  onClick={() => downloadCanvasQti(q).then(() => flash("Đã xuất gói Canvas QTI ✓"))}
+                  className="rounded-lg border border-[#dfe3d5] bg-[#f2f3eb] px-3 py-1.5 font-semibold text-slate-600 transition hover:bg-[#e7eadf] hover:text-slate-900"
+                >
+                  <span className="inline-flex items-center gap-2"><Download size={15} aria-hidden />Canvas QTI</span>
                 </button>
               </div>
             </div>

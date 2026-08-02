@@ -7,7 +7,7 @@ import { isQuestionResponseCorrect } from "@/lib/scoring";
 
 type ResponseValue = number | number[] | string;
 
-export default function FormPlayer({ quiz, onExit, onComplete }: { quiz: Quiz; onExit: () => void; onComplete?: (results: RoundResult[], score: number) => void }) {
+export default function FormPlayer({ quiz, onExit, onComplete }: { quiz: Quiz; onExit: () => void; onComplete?: (results: RoundResult[], score: number, responses: Record<number, ResponseValue>) => void }) {
   const [responses, setResponses] = useState<Record<number, ResponseValue>>({});
   const [elapsed, setElapsed] = useState(0);
   const [submitted, setSubmitted] = useState(false);
@@ -22,7 +22,7 @@ export default function FormPlayer({ quiz, onExit, onComplete }: { quiz: Quiz; o
       const pendingReview=question.type==="essay" && typeof response==="string" && response.trim().length>0;
       return { correct: pendingReview ? false : isQuestionResponseCorrect(question,response), earned: 0, responseMs: elapsed*1000, pendingReview } satisfies RoundResult;
     });
-    setSubmitted(true); onComplete?.(results,0);
+    setSubmitted(true); onComplete?.(results,0,responses);
   };
 
   if (submitted) return <div className="mx-auto flex w-full max-w-2xl flex-1 items-center p-5"><section className="w-full rounded-3xl bg-white p-8 text-center shadow-2xl"><CheckCircle2 size={54} className="mx-auto text-[#018f41]"/><h1 className="mt-4 text-2xl font-black text-[#01823c]">Đã nộp biểu mẫu</h1><p className="mt-2 text-slate-600">Câu tự luận được giữ ở trạng thái chờ giảng viên chấm.</p><button onClick={onExit} className="mt-5 rounded-xl bg-[#018f41] px-5 py-3 font-bold text-white">Về ngân hàng đề</button></section></div>;

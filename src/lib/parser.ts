@@ -48,6 +48,9 @@ export function parseQuiz(input: unknown): Quiz {
   }
 
   const obj = data as Record<string, unknown>;
+  if (obj.kind === "quiz" && obj.quiz && typeof obj.quiz === "object") {
+    return parseQuiz(obj.quiz);
+  }
 
   const title =
     typeof obj.title === "string" && obj.title.trim()

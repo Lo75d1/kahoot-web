@@ -6,7 +6,6 @@ import type { Quiz } from "./types";
 import { parseQuiz } from "./parser";
 import sampleRaw from "@/data/sample-quiz.json";
 import sampleQuizzesRaw from "@/data/sample-quizzes.json";
-import { sampleCatalogue } from "@/data/sample-catalogue";
 
 export interface SavedQuiz extends Quiz {
   id: string;
@@ -24,7 +23,7 @@ export interface QuizStore {
 const KEY = "quiz-bank-v1";
 const SEED_FLAG = "quiz-bank-seeded-v1";
 const SEED_PACK_FLAG = "quiz-bank-seeded-v2";
-const SEED_CATALOGUE_FLAG = "quiz-bank-seeded-v3";
+const SEED_COMPACT_FLAG = "quiz-bank-seeded-v4";
 
 function readAll(): SavedQuiz[] {
   if (typeof window === "undefined") return [];
@@ -86,7 +85,14 @@ export async function ensureSeeded(
   if (typeof window === "undefined") return;
   const firstFlag = `${SEED_FLAG}:${scope}`;
   const packFlag = `${SEED_PACK_FLAG}:${scope}`;
-  const catalogueFlag = `${SEED_CATALOGUE_FLAG}:${scope}`;
+  const compactFlag = `${SEED_COMPACT_FLAG}:${scope}`;
+  if (!window.localStorage.getItem(compactFlag)) {
+    const legacy = (await store.list()).filter((quiz) =>
+      quiz.tags.includes("Kho đề mẫu") && quiz.questions.length === 5 && quiz.description.startsWith("Đề mẫu 5 câu về"),
+    );
+    for (const quiz of legacy) await store.remove(quiz.id);
+    window.localStorage.setItem(compactFlag, "1");
+  }
   const existingTitles = new Set(
     (await store.list()).map((quiz) => quiz.title.trim().toLocaleLowerCase("vi")),
   );
@@ -100,21 +106,6 @@ export async function ensureSeeded(
       // bỏ qua nếu đề mẫu lỗi
     }
     window.localStorage.setItem(firstFlag, "1");
-  }
-  if (!window.localStorage.getItem(catalogueFlag)) {
-    for (const raw of sampleCatalogue) {
-      try {
-        const sample = parseQuiz(raw);
-        const normalizedTitle = sample.title.trim().toLocaleLowerCase("vi");
-        if (!existingTitles.has(normalizedTitle)) {
-          await store.save(sample);
-          existingTitles.add(normalizedTitle);
-        }
-      } catch {
-        // Bỏ qua riêng đề lỗi để các đề hợp lệ còn lại vẫn được nạp.
-      }
-    }
-    window.localStorage.setItem(catalogueFlag, "1");
   }
   if (!window.localStorage.getItem(packFlag)) {
     for (const raw of sampleQuizzesRaw) {

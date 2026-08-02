@@ -1,4 +1,4 @@
-{
+{"kind":"quiz","quiz":{
   "title": "Kỹ năng sử dụng AI có trách nhiệm",
   "description": "Đề mẫu gồm trắc nghiệm, đúng sai, điền khuyết và tự luận.",
   "version": 1,
@@ -77,4 +77,4 @@
       "sourceRefs": ["Tài liệu mẫu Gemini"]
     }
   ]
-}
+}}

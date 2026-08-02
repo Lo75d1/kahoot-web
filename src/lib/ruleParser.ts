@@ -120,10 +120,17 @@ export function parseByRules(text: string, rulesInput: string | Rules): Quiz {
 
 /** Prompt để user đưa cho ChatGPT/Gemini kèm FILE -> AI trả về quy tắc JSON. */
 export function buildRulesPrompt(): string {
-  return `Tôi có một tài liệu câu hỏi trắc nghiệm (đính kèm). Hãy ĐỌC tài liệu và TRẢ VỀ DUY NHẤT một JSON "quy tắc" mô tả cách tài liệu sắp xếp, để phần mềm của tôi tự tách câu hỏi. KHÔNG trả về nội dung câu hỏi, KHÔNG giải thích, KHÔNG dùng \`\`\`.
+  return `Bạn là bộ phân tích tài liệu cho hệ thống nhập đề UDA. Đọc toàn bộ tài liệu đính kèm và CHỈ trả về một JSON, không giải thích, không dùng markdown.
 
-Quy tắc dùng regex có NAMED GROUP. Cấu trúc bắt buộc:
-{
+Tự chọn đúng một trong hai cấu trúc:
+
+1. Tài liệu ngắn, bố cục hỗn hợp, có tự luận hoặc cần giữ nguyên nội dung:
+{"kind":"quiz","quiz":{"title":"...","description":"...","version":1,"tags":[],"questions":[{"type":"single_choice|multiple_choice|true_false|short_answer|fill_blank|essay","text":"...","timeLimit":20,"points":1000,"answers":[{"text":"...","correct":true}],"explanation":"","hint":"","hintDelaySeconds":0,"difficulty":"easy|medium|hard","topics":[],"status":"needs_review","origin":"ai_generated","confidence":0.0,"sourceRefs":["trang/dòng/mục"]}]}}
+
+Với essay, answers là []. Với short_answer/fill_blank, answers có ít nhất một đáp án đúng. confidence từ 0 đến 1. sourceRefs ghi vị trí trong tài liệu.
+
+2. CHỈ khi tài liệu rất dài, toàn bộ là trắc nghiệm có cấu trúc lặp lại rõ ràng, trả JSON quy tắc dùng regex có NAMED GROUP:
+{"kind":"rules","rules":{
   "title": "tên bộ đề (bạn tự đặt từ tài liệu)",
   "questionRegex": "regex khớp DÒNG bắt đầu câu hỏi, có (?<text>...) là nội dung câu hỏi",
   "answerRegex": "regex khớp DÒNG đáp án, có (?<text>...) là nội dung đáp án; nếu có nhãn A/B/C/D thì thêm (?<label>...)",
@@ -132,14 +139,15 @@ Quy tắc dùng regex có NAMED GROUP. Cấu trúc bắt buộc:
   "correctKeyRegex": "(chỉ khi key) regex khớp dòng chỉ đáp án đúng, có (?<label>...) là chữ cái đúng",
   "defaultTime": 20,
   "defaultPoints": 1000
-}
+}}
 
-Quy tắc chọn correctMode:
+Quy tắc chọn correctMode (chỉ áp dụng cho kind=rules):
 - Dùng "key" nếu đáp án đúng được ghi riêng (VD dòng "Đáp án: B", hoặc bảng đáp án). correctKeyRegex bắt chữ cái đúng.
 - Dùng "marker" nếu đáp án đúng được đánh dấu ngay tại đáp án (in đậm/gạch chân thường mất khi copy — hãy dựa vào ký tự thấy được như *, (Đ), ✓...). correctMarkerRegex khớp dòng đó.
 
 Yêu cầu:
 - Regex phải khớp ĐÚNG định dạng THỰC TẾ trong tài liệu (xem vài câu đầu để suy ra).
 - Nhớ escape dấu \\ đúng chuẩn JSON (VD \\d, \\s).
+- Không đoán đáp án. Nếu không chắc, dùng status="needs_review" và confidence thấp.
 - Chỉ in JSON, bắt đầu bằng { kết thúc bằng }.`;
 }

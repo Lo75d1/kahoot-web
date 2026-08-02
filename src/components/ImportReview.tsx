@@ -1,0 +1,30 @@
+"use client";
+
+import { useState } from "react";
+import { AlertTriangle, CheckCircle2, FileSearch, Save, Trash2 } from "lucide-react";
+import { assessImportQuality, type ImportQualityReport } from "@/lib/importContract";
+import type { Quiz } from "@/lib/types";
+
+export default function ImportReview({ initialQuiz, initialReport, onBack, onSave }: { initialQuiz: Quiz; initialReport: ImportQualityReport; onBack: () => void; onSave: (quiz: Quiz) => Promise<void> | void }) {
+  const [quiz, setQuiz] = useState(initialQuiz);
+  const [removed, setRemoved] = useState<number[]>([]);
+  const visible = quiz.questions.filter((_, index) => !removed.includes(index));
+  const liveQuiz = { ...quiz, questions: visible };
+  const report = assessImportQuality(liveQuiz, initialReport.issues.filter((issue) => issue.level === "error"));
+  const update = (index: number, patch: Partial<Quiz["questions"][number]>) => setQuiz((current) => ({ ...current, questions: current.questions.map((question, i) => i === index ? { ...question, ...patch } : question) }));
+  const allApproved = visible.length > 0 && visible.every((question) => question.status === "approved");
+
+  return <main className="mx-auto w-full max-w-5xl flex-1 p-4 sm:p-7">
+    <header className="rounded-3xl bg-white p-6 shadow-xl"><p className="text-xs font-black uppercase tracking-[.18em] text-[#018f41]">Cổng kiểm duyệt nhập đề</p><div className="mt-2 flex flex-wrap items-end justify-between gap-3"><div><h1 className="text-3xl font-black text-slate-900">{quiz.title}</h1><p className="mt-1 text-sm text-slate-500">Kiểm tra nguồn, đáp án và độ tin cậy trước khi đưa vào ngân hàng đề.</p></div><button onClick={onBack} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600">Quay lại</button></div>
+      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5">{[["Hợp lệ", report.total, "text-[#018f41]"],["Chờ duyệt", report.needsReview,"text-amber-700"],["Bị loại", removed.length + report.rejected,"text-rose-700"],["Tin cậy thấp",report.lowConfidenceCount,"text-orange-700"],["Tự luận",report.essayCount,"text-indigo-700"]].map(([label,value,color])=><div key={String(label)} className="rounded-2xl bg-slate-50 p-3"><p className={`text-2xl font-black ${color}`}>{value}</p><p className="text-xs font-bold text-slate-500">{label}</p></div>)}</div>
+    </header>
+    {initialReport.rejected > 0 && <div className="mt-4 flex gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800"><AlertTriangle className="shrink-0"/><p><b>{initialReport.rejected} câu lỗi đã được tách khỏi bản xem trước.</b> Các câu hợp lệ bên dưới vẫn có thể chỉnh và lưu.</p></div>}
+    <div className="mt-4 space-y-4">{quiz.questions.map((question,index)=>removed.includes(index)?null:<article key={index} className={`rounded-3xl border bg-white p-5 shadow-md ${question.status === "approved" ? "border-emerald-200" : "border-amber-200"}`}><div className="flex flex-wrap items-start justify-between gap-3"><div className="flex items-center gap-2"><span className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 text-sm font-black">{index+1}</span><span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-black uppercase">{question.type}</span>{question.confidence !== undefined&&<span className="text-xs font-bold text-slate-500">Tin cậy {Math.round(question.confidence*100)}%</span>}</div><div className="flex gap-2"><button onClick={()=>update(index,{status:question.status === "approved"?"needs_review":"approved"})} className={`inline-flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-black ${question.status === "approved"?"bg-emerald-100 text-emerald-800":"bg-[#018f41] text-white"}`}><CheckCircle2 size={15}/>{question.status === "approved"?"Đã duyệt":"Duyệt câu"}</button><button onClick={()=>setRemoved((current)=>[...current,index])} className="grid h-9 w-9 place-items-center rounded-lg bg-rose-50 text-rose-700" aria-label="Loại câu"><Trash2 size={16}/></button></div></div>
+      <textarea value={question.text} onChange={(event)=>update(index,{text:event.target.value,status:"needs_review"})} className="mt-4 min-h-20 w-full rounded-xl border border-slate-200 p-3 font-bold outline-none focus:border-[#018f41]"/>
+      {question.answers.length>0&&<div className="mt-3 grid gap-2 sm:grid-cols-2">{question.answers.map((answer,answerIndex)=><div key={answerIndex} className={`rounded-xl border p-3 text-sm ${answer.correct?"border-emerald-300 bg-emerald-50":"border-slate-200"}`}><span className="mr-2 font-black">{String.fromCharCode(65+answerIndex)}.</span>{answer.text}{answer.correct&&<span className="float-right text-xs font-black text-emerald-700">ĐÚNG</span>}</div>)}</div>}
+      <div className="mt-3 flex items-start gap-2 rounded-xl bg-slate-50 p-3 text-xs text-slate-600"><FileSearch size={16} className="shrink-0 text-[#018f41]"/><span><b>Nguồn:</b> {question.sourceRefs?.length ? question.sourceRefs.join(" · ") : "AI chưa ghi vị trí — cần đối chiếu tài liệu gốc."}</span></div>
+      {report.issues.filter((issue)=>issue.questionIndex===index).map((issue,issueIndex)=><p key={issueIndex} className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">⚠ {issue.message}</p>)}
+    </article>)}</div>
+    <footer className="sticky bottom-3 mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-slate-900 p-4 text-white shadow-2xl"><p className="text-sm"><b>{visible.length}</b> câu được giữ · {allApproved ? "đã sẵn sàng" : "còn câu chưa duyệt"}</p><div className="flex gap-2"><button disabled={!visible.length} onClick={()=>onSave(liveQuiz)} className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-black text-slate-800 disabled:opacity-40"><Save size={17}/>Lưu bản nháp</button><button disabled={!allApproved} onClick={()=>onSave(liveQuiz)} className="inline-flex items-center gap-2 rounded-xl bg-[#f58220] px-4 py-3 text-sm font-black disabled:opacity-40"><CheckCircle2 size={17}/>Duyệt và lưu</button></div></footer>
+  </main>;
+}

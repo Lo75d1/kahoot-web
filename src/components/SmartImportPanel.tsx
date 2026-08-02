@@ -4,9 +4,9 @@ import { useRef, useState } from "react";
 import { CheckCircle2, Download, Eye, EyeOff, FileText, KeyRound, Loader2, Sparkles, UploadCloud, X } from "lucide-react";
 import type { Quiz } from "@/lib/types";
 import { parseCommonQuizText, parseCsv, parseMarkerText } from "@/lib/textFormat";
-import { buildRulesPrompt, parseByRules } from "@/lib/ruleParser";
-import { extractJson } from "@/lib/aiPrompt";
+import { buildRulesPrompt } from "@/lib/ruleParser";
 import { parseQuiz } from "@/lib/parser";
+import { assessImportQuality, parseImportResult, type ImportQualityReport } from "@/lib/importContract";
 
 const ACCEPT = ".pdf,.docx,.txt,.csv,.md,.tsv,.png,.jpg,.jpeg,.webp,.gif";
 
@@ -16,7 +16,7 @@ async function readJson(response: Response) {
   catch { throw new Error(response.ok ? "Máy chủ trả về dữ liệu không hợp lệ." : `Máy chủ lỗi (${response.status}). Vui lòng thử lại.`); }
 }
 
-export default function SmartImportPanel({ onSave }: { onSave: (quiz: Quiz) => Promise<void> | void }) {
+export default function SmartImportPanel({ onReview }: { onReview: (quiz: Quiz, report: ImportQualityReport) => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [source, setSource] = useState("");
@@ -24,6 +24,7 @@ export default function SmartImportPanel({ onSave }: { onSave: (quiz: Quiz) => P
   const [working, setWorking] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<Quiz | null>(null);
+  const [report, setReport] = useState<ImportQualityReport | null>(null);
   const [fileMeta, setFileMeta] = useState("");
   const [rulesRaw, setRulesRaw] = useState("");
   const [copied, setCopied] = useState(false);
@@ -68,12 +69,13 @@ export default function SmartImportPanel({ onSave }: { onSave: (quiz: Quiz) => P
     setError(null); setPreview(null); setWorking("Code đang áp dụng quy tắc và kiểm tra bộ đề…");
     try {
       let result: Quiz | null = null;
+      let quality: ImportQualityReport | null = null;
       if (rulesRaw.trim()) {
-        try { result = parseQuiz(extractJson(rulesRaw)); }
-        catch { if (source.trim()) result = parseByRules(source, rulesRaw); }
+        const imported = parseImportResult(rulesRaw, source);
+        result = imported.quiz; quality = imported.report;
       } else result = localFallback();
       if (!result) throw new Error("Chưa nhận ra cấu trúc. Hãy copy prompt, đưa tài liệu cho AI ngoài và dán JSON quy tắc AI trả về.");
-      setPreview(result);
+      setPreview(result); setReport(quality ?? assessImportQuality(result));
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Không áp dụng được quy tắc nhập đề."); }
     finally { setWorking(""); }
   };
@@ -93,7 +95,7 @@ export default function SmartImportPanel({ onSave }: { onSave: (quiz: Quiz) => P
       }
       const result = await readJson(response) as unknown as Quiz & { error?: string };
       if (!response.ok) throw new Error(result.error || "API key hoặc dịch vụ AI không hợp lệ.");
-      setPreview(result);
+      const parsed = parseQuiz(result); setPreview(parsed); setReport(assessImportQuality(parsed));
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Không phân tích được bằng API key này."); }
     finally { setWorking(""); }
   };
@@ -129,6 +131,6 @@ export default function SmartImportPanel({ onSave }: { onSave: (quiz: Quiz) => P
     </div>
 
     {error && <p role="alert" className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</p>}
-    {preview && <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-start gap-3"><CheckCircle2 className="mt-0.5 text-[#018f41]"/><div><p className="font-black text-[#01823c]">{preview.title}</p><p className="text-sm text-slate-600">Đã nhận diện {preview.questions.length} câu · lưu dưới dạng bản nháp cần duyệt</p></div></div><button onClick={() => onSave(preview)} className="rounded-xl bg-[#018f41] px-4 py-3 text-sm font-extrabold text-white">Lưu vào ngân hàng đề</button></div><div className="mt-3 grid gap-2 sm:grid-cols-2">{preview.questions.slice(0,4).map((q,i)=><div key={`${i}-${q.text}`} className="rounded-xl bg-white p-3 text-sm text-slate-700"><b>{i+1}.</b> {q.text}</div>)}</div>{preview.questions.length>4&&<p className="mt-2 text-xs text-slate-500">Và {preview.questions.length-4} câu khác…</p>}</div>}
+    {preview && report && <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-start gap-3"><CheckCircle2 className="mt-0.5 text-[#018f41]"/><div><p className="font-black text-[#01823c]">{preview.title}</p><p className="text-sm text-slate-600">Nhận diện {preview.questions.length} câu · {report.rejected} câu lỗi · {report.lowConfidenceCount} câu tin cậy thấp</p></div></div><button onClick={() => onReview(preview, report)} className="rounded-xl bg-[#018f41] px-4 py-3 text-sm font-extrabold text-white">Mở màn kiểm duyệt</button></div><div className="mt-3 grid gap-2 sm:grid-cols-2">{preview.questions.slice(0,4).map((q,i)=><div key={`${i}-${q.text}`} className="rounded-xl bg-white p-3 text-sm text-slate-700"><b>{i+1}.</b> {q.text}</div>)}</div>{preview.questions.length>4&&<p className="mt-2 text-xs text-slate-500">Và {preview.questions.length-4} câu khác…</p>}</div>}
   </section>;
 }
